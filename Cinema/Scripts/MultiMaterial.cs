@@ -1,24 +1,24 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using Object = UnityEngine.Object;
+using UnityLabs;
+using UnityLabs.Cinema;
 
 namespace UnityLabs.Cinema
 {
-    [CreateAssetMenu(menuName = "UnityLabs/Cinema/MultiMaterial")]
-    [Serializable]
-    public class MultiMaterial : ScriptableObject
+    public class MultiMaterial : MonoBehaviour
     {
         [SerializeField]
-        Material[] m_MaterialArray;
+        MultiMaterialData m_MultiMaterial;
+
+        public MultiMaterialData multiMaterial
+        {
+            get { return m_MultiMaterial; }
+        }
 
 #if UNITY_EDITOR
-        public bool[] overrideFields;
+        public const string multiMaterialPub = "m_MultiMaterial";
 #endif
-        public Material[] materialArray
-        {
-            get { return m_MaterialArray; }
-            set { m_MaterialArray = value; }
-        }
     }
-
 }

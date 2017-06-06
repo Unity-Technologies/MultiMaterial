@@ -1,53 +1,60 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 namespace UnityLabs.Cinema
 {
-    [CustomEditor(typeof(MultiMaterial))]
+    [CustomEditor(typeof(MultiMaterial), true)]
     public class MultiMaterialEditor : Editor
     {
-        public SerializedProperty materialArray;
-
-        void OnEnable()
+        SerializedProperty m_MultiMaterialData;
+        MultiMaterialDataEditor m_DataEditor;
+        public void OnEnable()
         {
-            materialArray = serializedObject.FindProperty("m_MaterialArray");
+            m_MultiMaterialData = serializedObject.FindProperty(MultiMaterial.multiMaterialPub);
+            //m_DataEditor = new MultiMaterialDataEditor();
         }
 
         public override void OnInspectorGUI()
         {
+            EditorGUILayout.LabelField("test");
+
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(m_MultiMaterialData, new GUIContent("data"));
+            serializedObject.ApplyModifiedProperties();
+
+            if (m_DataEditor == null)
+            {
+                EditorGUILayout.LabelField("m_DataEditor == null");
+                if (m_MultiMaterialData != null && m_MultiMaterialData.objectReferenceValue != null)
+                {
+                    m_DataEditor = CreateEditor(m_MultiMaterialData.objectReferenceValue) as MultiMaterialDataEditor;
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("m_DataEditor != null");
+                if (m_MultiMaterialData == null || m_MultiMaterialData.objectReferenceValue == null || 
+                m_DataEditor.target == null)
+                {
+                    DestroyImmediate(m_DataEditor);
+                    m_DataEditor = null;
+                }
+                else if (m_MultiMaterialData.objectReferenceValue != m_DataEditor.target)
+                {
+                    DestroyImmediate(m_DataEditor);
+                    m_DataEditor = null;
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("got here");
+                    m_DataEditor.OnInspectorGUI();
+                }
+            }
+
             base.OnInspectorGUI();
-            if (GUILayout.Button("Add Selected"))
-            {
-                serializedObject.Update();
-                var matHash = new HashSet<Material>();
-                var multMat = target as MultiMaterial;
-                foreach (var mat in multMat.materialArray)
-                {
-                    matHash.Add(mat);
-                }
-                foreach (var obj in Selection.objects)
-                {
-                    var mat = obj as Material;
-                    if (mat != null)
-                    {
-                        matHash.Add(mat);
-                    }
-                }
-                multMat.materialArray = matHash.ToArray();
-                serializedObject.ApplyModifiedProperties();
-            }
-            if (GUILayout.Button("Select Materials"))
-            {
-                var multMat = target as MultiMaterial;
-                if (multMat != null)
-                {
-                    Selection.objects = multMat.materialArray;
-                }
-            }
         }
     }
-
 }

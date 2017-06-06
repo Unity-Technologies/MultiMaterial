@@ -7,7 +7,7 @@ namespace UnityLabs.Cinema
 {
     public class MultiMaterialWindow : EditorWindow
     {
-        MultiMaterial m_MultiMaterial;
+        MultiMaterialData m_MultiMaterialData;
         MaterialEditor m_ControlMaterialEditor;
         Material m_ContolMaterial;
         SerializedObject m_SerializedMultiMaterial;
@@ -28,8 +28,8 @@ namespace UnityLabs.Cinema
             m_ScrollView = EditorGUILayout.BeginScrollView(m_ScrollView);
             EditorGUILayout.Space();
             EditorGUI.BeginChangeCheck();
-            m_MultiMaterial = EditorGUILayout.ObjectField("MultiMaterial: ",
-                m_MultiMaterial, typeof(MultiMaterial), false) as MultiMaterial;
+            m_MultiMaterialData = EditorGUILayout.ObjectField("MultiMaterialData: ",
+                m_MultiMaterialData, typeof(MultiMaterialData), false) as MultiMaterialData;
             if (EditorGUI.EndChangeCheck())
             {
                 if (m_ControlMaterialEditor != null)
@@ -49,63 +49,12 @@ namespace UnityLabs.Cinema
             {
                 m_ControlMaterialEditor.DefaultPreviewGUI(GUILayoutUtility.GetRect(128, 128), EditorStyles.helpBox);
             }
-            
         }
 
-
-        void UpdateMaterials()
-        {
-            if (m_MultiMaterial.materialArray.Length < 1 && m_ControlMaterialEditor == null)
-            {
-                // help box goes here to tell you to assign control material to first item in array
-                return;
-            }
-            SetCheckMaterialShaders();
-            var controlMats = new Material[] { m_MultiMaterial.materialArray[0] };
-            var controlProperties = MaterialEditor.GetMaterialProperties(controlMats);
-            for (var i = 1; i < m_MultiMaterial.materialArray.Length; i++)
-            {
-                if (m_MultiMaterial.materialArray[i] != null)
-                {
-                    foreach (var controlProperty in controlProperties)
-                    {
-                        switch (controlProperty.type)
-                        {
-                            case MaterialProperty.PropType.Color:
-                                m_MultiMaterial.materialArray[i].SetColor(controlProperty.name, controlProperty.colorValue);
-                                break;
-                            case MaterialProperty.PropType.Float:
-                                m_MultiMaterial.materialArray[i].SetFloat(controlProperty.name, controlProperty.floatValue);
-                                break;
-                            case MaterialProperty.PropType.Range:
-                                goto case MaterialProperty.PropType.Float;
-                            case MaterialProperty.PropType.Vector:
-                                m_MultiMaterial.materialArray[i].SetVector(controlProperty.name, controlProperty.vectorValue);
-                                break;
-                            case MaterialProperty.PropType.Texture:
-                                // skipping texture set since used for udim mapping
-                                break;
-                        }
-                    }
-                }
-            }
-
-        }
-
-        void SetCheckMaterialShaders()
-        {
-            foreach (var material in m_MultiMaterial.materialArray)
-            {
-                if (material.shader != m_MultiMaterial.materialArray[0].shader)
-                {
-                    material.shader = m_MultiMaterial.materialArray[0].shader;
-                }
-            }
-        }
 
         void HandleContolMaterialDrawing()
         {
-            if (m_MultiMaterial == null)
+            if (m_MultiMaterialData == null)
             {
                 if (m_ControlMaterialEditor != null)
                     DestroyImmediate(m_ControlMaterialEditor);
@@ -113,26 +62,26 @@ namespace UnityLabs.Cinema
                 return;
             }
 
-            if (m_MultiMaterial != null && m_ControlMaterialEditor != null)
+            if (m_MultiMaterialData != null && m_ControlMaterialEditor != null)
             {
                 EditorGUI.BeginChangeCheck();
                 m_ControlMaterialEditor.DrawHeader();
                 m_ControlMaterialEditor.OnInspectorGUI();
                 if (EditorGUI.EndChangeCheck())
                 {
-                    UpdateMaterials();
+                    MultiMaterialEditorUtilities.UpdateMaterials(m_MultiMaterialData, m_ControlMaterialEditor);
                 }
             }
-            else if (m_MultiMaterial != null
-                && m_MultiMaterial.materialArray != null
-                && m_MultiMaterial.materialArray.Length > 0
-                && m_MultiMaterial.materialArray[0] != null)
+            else if (m_MultiMaterialData != null
+                && m_MultiMaterialData.materialArray != null
+                && m_MultiMaterialData.materialArray.Length > 0
+                && m_MultiMaterialData.materialArray[0] != null)
             {
-                if (m_ContolMaterial != m_MultiMaterial.materialArray[0])
+                if (m_ContolMaterial != m_MultiMaterialData.materialArray[0])
                 {
                     if (m_ControlMaterialEditor != null)
                         DestroyImmediate(m_ControlMaterialEditor);
-                    m_ContolMaterial = m_MultiMaterial.materialArray[0];
+                    m_ContolMaterial = m_MultiMaterialData.materialArray[0];
                     m_ControlMaterialEditor = Editor.CreateEditor(m_ContolMaterial, typeof(MaterialEditor)) as MaterialEditor;
                 }
             }
@@ -140,7 +89,7 @@ namespace UnityLabs.Cinema
 
         void HandleMultiMaterilEditorDrawing()
         {
-            if (m_MultiMaterial == null)
+            if (m_MultiMaterialData == null)
             {
                 m_SerializedMultiMaterial = null;
                 m_MaterialArray = null;
@@ -157,7 +106,7 @@ namespace UnityLabs.Cinema
             }
             else
             {
-                m_SerializedMultiMaterial = new SerializedObject(m_MultiMaterial);
+                m_SerializedMultiMaterial = new SerializedObject(m_MultiMaterialData);
                 m_MaterialArray = m_SerializedMultiMaterial.FindProperty("m_MaterialArray");
             }
             if (propertiesChanged)

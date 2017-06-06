@@ -23,5 +23,4 @@ namespace UnityLabs.Cinema
             set { m_SearchSettings = value; }
         }
     }
-
 }

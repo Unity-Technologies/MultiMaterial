@@ -23,6 +23,7 @@ namespace UnityLabs.Cinema
         Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
         Vector2 m_ScrollView;
         bool m_SettingReady;
+        string m_Logs;
 
         Dictionary<int, Texture> udimMapping;// = new Dictionary<int, Texture>();
         Dictionary<int, List<Material>> udimMaterial;// = new Dictionary<int, Material>();
@@ -84,7 +85,6 @@ namespace UnityLabs.Cinema
 
         }
 
-        string m_Logs;
         void SearchSettingsDrawer(SerializedObject serializedObject, SerializedProperty serializedProperty, MaterialTextureSettings.TextureSearchSettings textureSearch, int index = -1)
         {
             serializedObject.Update();
