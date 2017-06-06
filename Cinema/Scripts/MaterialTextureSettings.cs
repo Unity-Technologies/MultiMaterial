@@ -17,6 +17,8 @@ namespace UnityLabs.Cinema
         [SerializeField]
         TextureSearchSettings[] m_SearchSettings;
 
+        public const string searchSettingsPib = "m_SearchSettings";
+
         public TextureSearchSettings[] searchSettings
         {
             get { return m_SearchSettings; }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -18,7 +16,7 @@ namespace UnityLabs.Cinema
 
         void OnEnable()
         {
-            materialArray = serializedObject.FindProperty("m_MaterialArray");
+            materialArray = serializedObject.FindProperty(MultiMaterialData.materialArrayPub);
             m_MaterialEditors = new MaterialEditor[] {};
             m_MultiEditorIsDirty = true;
             m_MaterialEditorReady = false;
@@ -49,7 +47,6 @@ namespace UnityLabs.Cinema
                     var matEditor = m_MaterialEditors[i];
                     if (matEditor != null)
                     {
-                        //matEditor.DrawHeader();
                         DrawMaterialHeader(matEditor, i);
                     }
                     else
@@ -88,10 +85,6 @@ namespace UnityLabs.Cinema
                     Selection.objects = multMat.materialArray;
                 }
             }
-//            if (HasPreviewGUI())
-//            {
-//                OnInteractivePreviewGUI(GUILayoutUtility.GetRect(128,128),new GUIStyle());
-//            }
         }
 
         public override bool HasPreviewGUI()
