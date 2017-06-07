@@ -30,14 +30,13 @@ namespace UnityLabs.Cinema
             EditorGUILayout.PropertyField(materialArray, new GUIContent("Multi Material"), true);
             serializedObject.ApplyModifiedProperties();
 
-            if (EditorGUI.EndChangeCheck())
+            if (EditorGUI.EndChangeCheck() || !CheckMaterialEditors())
             {
-                m_MaterialEditorReady = RebuildMaterialEditors(true);
+                m_MaterialEditorReady = RebuildMaterialEditors() && Event.current.type == EventType.Layout;
             }
-
-            if (!m_MaterialEditorReady)
+            else
             {
-                m_MaterialEditorReady = RebuildMaterialEditors(m_MultiEditorIsDirty);
+                m_MaterialEditorReady = true;
             }
 
             if (m_MaterialEditorReady)
@@ -116,49 +115,41 @@ namespace UnityLabs.Cinema
 
         /// <summary>
         /// Rebuilds material editor if materials in editor do not match those in the material array 
-        /// or if 'forceRebuild' is true.
         /// </summary>
-        /// <param name="forceRebuild"></param>
-        /// <returns> true if materials rebuilt clean and in UI Layout Event</returns>
-        bool RebuildMaterialEditors(bool forceRebuild = false)
+        /// <returns> true if materials rebuilt clean</returns>
+        bool RebuildMaterialEditors()
         {
-            if (forceRebuild)
+            if (!CheckMaterialEditors())
             {
-                m_MultiEditorIsDirty = true;
-            }
-
-            if (!m_MultiEditorIsDirty)
-            {
-                m_MultiEditorIsDirty = !CheckMaterialEditors();
-            }
-            else
-            { 
-                // TODO see if can reuse materialEditors before destroying them -JN
-                var matData = target as MultiMaterialData;
-                if (matData != null)
+                if (m_MaterialEditors.Length > 0)
                 {
-                    if (m_MaterialEditors != null && m_MaterialEditors.Length > 0)
+                    foreach (var matEditor in m_MaterialEditors)
                     {
-                        foreach (var matEditor in m_MaterialEditors)
-                        {
-                            if (matEditor != null)
-                                DestroyImmediate(matEditor);
-                        }
+                        if (matEditor != null)
+                            DestroyImmediate(matEditor);
                     }
-
-                    m_MaterialEditors = new MaterialEditor[matData.materialArray.Length];
-                    for (var i = 0; i < matData.materialArray.Length; i++)
+                    m_MaterialEditors = new MaterialEditor[0];
+                }
+                
+                if (m_MaterialEditors.Length == 0)
+                {
+                    var matData = target as MultiMaterialData;
+                    if (matData != null && matData.materialArray.Length > 0)
                     {
-                        var material = matData.materialArray[i];
-                        if (material != null)
+                        m_MaterialEditors = new MaterialEditor[matData.materialArray.Length];
+                        for (var i = 0; i < matData.materialArray.Length; i++)
                         {
-                            m_MaterialEditors[i] = CreateEditor(material) as MaterialEditor;
+                            var material = matData.materialArray[i];
+                            if (material != null)
+                            {
+                                m_MaterialEditors[i] = CreateEditor(material) as MaterialEditor;
+                            }
                         }
                     }
                 }
             }
 
-            return m_MultiEditorIsDirty && Event.current.type == EventType.Layout;
+            return CheckMaterialEditors();
         }
 
         bool CheckMaterialEditors()

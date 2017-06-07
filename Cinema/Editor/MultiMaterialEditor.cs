@@ -54,11 +54,14 @@ namespace UnityLabs.Cinema
                     DestroyImmediate(m_DataEditor);
                     m_DataEditor = null;
                 }
-                var multiMaterial = target as MultiMaterial;
-                if (m_DataEditor == null && multiMaterial != null && multiMaterial.multiMaterialData != null)
+                
+                if (m_DataEditor == null)
                 {
-                  
-                    m_DataEditor = CreateEditor(multiMaterial.multiMaterialData) as MultiMaterialDataEditor;
+                    var multiMaterial = target as MultiMaterial;
+                    if (multiMaterial != null && multiMaterial.multiMaterialData != null)
+                    {
+                        m_DataEditor = CreateEditor(multiMaterial.multiMaterialData) as MultiMaterialDataEditor;
+                    }
                 }
             }
             return CheckEditor();
