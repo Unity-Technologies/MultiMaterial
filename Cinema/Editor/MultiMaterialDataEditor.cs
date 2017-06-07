@@ -111,7 +111,6 @@ namespace UnityLabs.Cinema
             {
                 base.OnInteractivePreviewGUI(r, background);
             }
-            
         }
 
 
@@ -182,9 +181,6 @@ namespace UnityLabs.Cinema
             return true;
         }
 
-        bool m_OpenEditorChanged;
-        int m_OpenEditor;
-        MaterialEditor m_CurrentEditor;
         void DrawMaterialHeader(MaterialEditor materialEditor, int index)
         {
 
