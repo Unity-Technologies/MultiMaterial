@@ -12,7 +12,6 @@ namespace UnityLabs.Cinema
         Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
         public void OnEnable()
         {
-//            m_MultiMaterialData = serializedObject.FindProperty(MultiMaterial.multiMaterialPub);
             m_EditorIsReady = false;
         }
 
@@ -21,7 +20,6 @@ namespace UnityLabs.Cinema
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
             base.OnInspectorGUI();
-            //EditorGUILayout.PropertyField(m_MultiMaterialData, new GUIContent("data"));
             serializedObject.ApplyModifiedProperties();
 
             if (EditorGUI.EndChangeCheck() || !CheckEditor())
