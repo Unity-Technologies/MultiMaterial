@@ -76,7 +76,8 @@ namespace UnityLabs.Cinema
                                     prop.animationCurveValue = property.Value.animationCurveValue;
                                     break;
                                 case SerializedPropertyType.ArraySize:
-                                    prop.arraySize = property.Value.arraySize;
+                                    if (prop.isArray)
+                                        prop.arraySize = property.Value.arraySize;
                                     break;
                                 case SerializedPropertyType.Boolean:
                                     prop.boolValue = property.Value.boolValue;
@@ -167,8 +168,9 @@ namespace UnityLabs.Cinema
                                 setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
                             break;
                         case SerializedPropertyType.ArraySize:
-                            if (syncAll || controlPoperty.arraySize != property.arraySize)
-                                setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
+                            if (controlPoperty.isArray)
+                                if (syncAll || controlPoperty.arraySize != property.arraySize)
+                                    setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
                             break;
                         case SerializedPropertyType.Boolean:
                             if (syncAll || controlPoperty.boolValue != property.boolValue)
