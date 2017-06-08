@@ -1,53 +1,80 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace UnityLabs.Cinema
 {
-    [CustomEditor(typeof(MultiMaterial))]
+    [CustomEditor(typeof(MultiMaterial), true)]
     public class MultiMaterialEditor : Editor
     {
-        public SerializedProperty materialArray;
-
-        void OnEnable()
+//        SerializedProperty m_MultiMaterialData;
+        MultiMaterialDataEditor m_DataEditor;
+        bool m_EditorIsReady;
+        Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
+        public void OnEnable()
         {
-            materialArray = serializedObject.FindProperty("m_MaterialArray");
+            m_EditorIsReady = false;
         }
 
         public override void OnInspectorGUI()
         {
+            EditorGUI.BeginChangeCheck();
+            serializedObject.Update();
             base.OnInspectorGUI();
-            if (GUILayout.Button("Add Selected"))
+            serializedObject.ApplyModifiedProperties();
+
+            if (EditorGUI.EndChangeCheck() || !CheckEditor())
             {
-                serializedObject.Update();
-                var matHash = new HashSet<Material>();
-                var multMat = target as MultiMaterial;
-                foreach (var mat in multMat.materialArray)
+                m_EditorIsReady = RebuildEditor() && Event.current.type == EventType.Layout;
+            }
+            else
+            {
+                m_EditorIsReady = true;
+            }
+
+            EditorGUI.indentLevel++;
+            var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUI.DrawRect(helpRec, m_DarkWindow);
+            if (m_EditorIsReady)
+            {
+                m_DataEditor.OnInspectorGUI();
+            }
+            EditorGUILayout.Separator();
+            EditorGUILayout.EndVertical();
+            EditorGUI.indentLevel--;
+        }
+        
+        bool RebuildEditor()
+        {
+            if (!CheckEditor())
+            {
+                if (m_DataEditor != null)
                 {
-                    matHash.Add(mat);
+                    DestroyImmediate(m_DataEditor);
+                    m_DataEditor = null;
                 }
-                foreach (var obj in Selection.objects)
+                
+                if (m_DataEditor == null)
                 {
-                    var mat = obj as Material;
-                    if (mat != null)
+                    var multiMaterial = target as MultiMaterial;
+                    if (multiMaterial != null && multiMaterial.multiMaterialData != null)
                     {
-                        matHash.Add(mat);
+                        m_DataEditor = CreateEditor(multiMaterial.multiMaterialData) as MultiMaterialDataEditor;
                     }
                 }
-                multMat.materialArray = matHash.ToArray();
-                serializedObject.ApplyModifiedProperties();
             }
-            if (GUILayout.Button("Select Materials"))
-            {
-                var multMat = target as MultiMaterial;
-                if (multMat != null)
-                {
-                    Selection.objects = multMat.materialArray;
-                }
-            }
+            return CheckEditor();
+        }
+
+        bool CheckEditor()
+        {
+            if (m_DataEditor == null)
+                return false;
+
+            var multiMaterial = target as MultiMaterial;
+            if (multiMaterial == null || multiMaterial.multiMaterialData == null)
+                return false;
+
+            return m_DataEditor.target as MultiMaterialData == multiMaterial.multiMaterialData;
         }
     }
-
 }
