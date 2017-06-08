@@ -124,7 +124,7 @@ namespace UnityLabs.Cinema
             {
                 EditorGUI.BeginChangeCheck();
                 materialEditor.OnInspectorGUI();
-                if (EditorGUI.EndChangeCheck())
+                if (EditorGUI.EndChangeCheck())// && Event.current.type == EventType.MouseUp)
                 {
                     MultiMaterialEditorUtilities.UpdateMaterials(targetArray, materialEditor);
                 }
