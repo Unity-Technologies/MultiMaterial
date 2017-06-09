@@ -123,7 +123,12 @@ namespace UnityLabs.Cinema
             if (materialEditor.isVisible)
             {
                 EditorGUI.BeginChangeCheck();
+                if (GUILayout.Button("Sync to Material"))
+                {
+                    MultiMaterialEditorUtilities.UpdateMaterials(targetArray, materialEditor, true);
+                }
                 materialEditor.OnInspectorGUI();
+
                 if (EditorGUI.EndChangeCheck())
                 {
                     MultiMaterialEditorUtilities.UpdateMaterials(targetArray, materialEditor);
