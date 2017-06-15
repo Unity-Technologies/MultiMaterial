@@ -1,4 +1,8 @@
-﻿using UnityEditor;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEditor.Rendering;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -30,7 +34,7 @@ namespace UnityLabs.Cinema
                     //if (materialEditors[i] != null)
                     if (targetArray.materials[i] != null)
                     {
-                        DrawMaterialHeader(serializedObject, materialEditors[i], targetArray);
+                        DrawMaterialHeader(serializedObject, ref materialEditors[i], targetArray);
                     }
                     else
                     {
@@ -107,18 +111,70 @@ namespace UnityLabs.Cinema
         }
 
         public static void DrawMaterialHeader(SerializedObject serializedObject, 
-            MaterialEditor materialEditor, MaterialArray targetArray)
+            ref MaterialEditor materialEditor, MaterialArray targetArray)
         {
-            EditorGUI.BeginChangeCheck();
+            if (materialEditor == null)
+            {
+                return;
+            }
+//            EditorGUI.BeginChangeCheck();
             // TODO need to replace default draw header
             // TODO does not detect change in all cases for set shader 
             // TODO has issue with drawing in OnInspectorGUI context
             materialEditor.DrawHeader();
-            if (EditorGUI.EndChangeCheck())
-            {
-                // shader property is drawn in header of material
-                MultiMaterialEditorUtilities.SetCheckMaterialShaders(targetArray, materialEditor.target as Material); 
-            }
+
+            EditorGUILayout.BeginHorizontal();
+
+	        EditorGUILayout.BeginHorizontal(GUILayout.MaxWidth(80));
+
+	        var layout = EditorGUILayout.GetControlRect(false, 36, GUILayout.MinWidth(40), GUILayout.MaxWidth(40));
+	        EditorGUI.DrawRect(layout, Color.blue);
+
+			var imageRect = new Rect(layout.xMax-32, layout.y, 32, 32);
+	        EditorGUI.DrawRect(imageRect, Color.green);
+			EditorGUI.DrawPreviewTexture(imageRect, AssetPreview.GetAssetPreview( materialEditor.target as Material));
+	        
+			var foldControlRect = new Rect(layout.x-4, layout.yMax-12, 8, 8);
+	        EditorGUI.DrawRect(foldControlRect, Color.red);
+	        EditorGUI.Foldout(foldControlRect, true, GUIContent.none);
+
+			EditorGUILayout.EndVertical();
+	        EditorGUILayout.BeginVertical();
+
+            EditorGUILayout.LabelField(new GUIContent(materialEditor.target.name));
+
+	        UnityEditorInternal.InternalEditorUtility.SetupShaderMenu(materialEditor.target as Material);
+
+			var guids = AssetDatabase.FindAssets("t:Shader");
+	        var shaderList = new List<Shader>(guids.Select(s => AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(s)) as Shader));
+			shaderList.AddRange((Shader[])Resources.FindObjectsOfTypeAll(typeof(Shader)));
+	        var shadernames = shaderList.Select(n=>n.name).ToArray();
+
+	        // Filter out those that are supposed to be hidden
+	        shadernames = shadernames.Where(s => !string.IsNullOrEmpty(s) && !s.Contains("__") && !s.Contains("Hidden")).ToArray();
+	        var mat = materialEditor.target as Material;
+	        var intdex = Array.FindIndex(shadernames, s=> s == mat.shader.name);
+	        EditorGUILayout.BeginVertical();
+
+			var contents = shadernames.Select(s=> new GUIContent(s)).ToArray();
+	        intdex = EditorGUILayout.Popup(new GUIContent("Shader"), intdex, contents, EditorStyles.popup);
+			EditorGUILayout.EndVertical();
+	        if (shadernames[intdex] != mat.shader.name)
+	        {
+
+		        var matSerial = new SerializedObject(materialEditor.target);
+		        matSerial.Update();
+
+		        var shaderSerial = matSerial.FindProperty("m_Shader");
+		        shaderSerial.objectReferenceValue = Shader.Find(shadernames[intdex]);
+		        matSerial.ApplyModifiedProperties();
+
+		        MultiMaterialEditorUtilities.SetCheckMaterialShaders(targetArray, materialEditor.target as Material);
+	        }
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.EndHorizontal();
+
             
             if (materialEditor.isVisible)
             {

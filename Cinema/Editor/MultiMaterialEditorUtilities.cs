@@ -256,10 +256,14 @@ namespace UnityLabs.Cinema
             return setProperties;
         }
 
+
         public static void SetCheckMaterialShaders(MaterialArray materialArray, Material mat)
         {
             var matSerial = new SerializedObject(mat);
+            matSerial.Update();
             var shaderSerial = matSerial.FindProperty("m_Shader");
+            matSerial.ApplyModifiedProperties();
+
             foreach (var material in materialArray.materials)
             {
                 if (material == null)
@@ -270,7 +274,7 @@ namespace UnityLabs.Cinema
                 {
                     targetMatSerial.Update();
                     targetShader.objectReferenceValue = shaderSerial.objectReferenceValue;
-                    targetMatSerial.ApplyModifiedPropertiesWithoutUndo();
+                    targetMatSerial.ApplyModifiedProperties();
                 }
             }
         }
