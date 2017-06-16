@@ -18,6 +18,7 @@ namespace UnityLabs.Cinema
             multiMaterialData = serializedObject.FindProperty(MultiMaterialData.materialArrayDataPub);
             materialArray = multiMaterialData.FindPropertyRelative(MaterialArray.materialArrayPub);
             m_MaterialEditors = new MaterialEditor[] {};
+			MaterialArrayDrawers.UpdateShaderNames();
         }
 
         

@@ -8,18 +8,16 @@ namespace UnityLabs.Cinema
     public class MultiMaterialEditorUtilities
     {
         public static void UpdateMaterials(MaterialArray materialArray, 
-            MaterialEditor controlMatialEditor, bool syncAll = false)
+            Material controlMatial, bool syncAll = false)
         {
-            if (materialArray.materials.Length < 1 && controlMatialEditor == null 
-                || controlMatialEditor.target == null)
+            if (materialArray.materials.Length < 1 && controlMatial == null)
             {
                 return;
             }
 
-            SetCheckMaterialShaders(materialArray, controlMatialEditor.target as Material);
-
-            var controlMatial = controlMatialEditor.target as Material;
-            var setProperties = new Dictionary<string, SerializedProperty>();
+            SetCheckMaterialShaders(materialArray, controlMatial);
+            var controlMaterialObject = new SerializedObject(controlMatial);
+            SerializedObject checkedMaterialObject = null;
             if (!syncAll)
             {
                 Material checkedMaterial = null;
@@ -31,19 +29,10 @@ namespace UnityLabs.Cinema
                         break;
                     }
                 }
-                var controlMaterialObject = new SerializedObject(controlMatialEditor.target);
-                var checkedMaterialObject = new SerializedObject(checkedMaterial);
-
-                setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject);
-            }
-            else
-            {
-                var controlMaterialObject = new SerializedObject(controlMatialEditor.target);
-
-                setProperties = GetPropertiesToChange(controlMaterialObject, null, true);
+                checkedMaterialObject = new SerializedObject(checkedMaterial);
             }
 
-
+            var setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject, syncAll);
 
 
             var matHash = new HashSet<Material>(materialArray.materials);

@@ -43,7 +43,7 @@ namespace UnityLabs.Cinema
                 }
                 m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
                 EditorGUI.indentLevel++;
-                var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                //var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 if (GUILayout.Button("Creat From Renderer"))
                 {
                     var saveMultiMaterialData = new MultiMaterialData { materialArrayData = m_RendererMaterialArray };
@@ -68,14 +68,15 @@ namespace UnityLabs.Cinema
                     }
 
                 }
-                EditorGUI.DrawRect(helpRec, m_DarkWindow);
+                //EditorGUI.indentLevel--;
+                //EditorGUI.DrawRect(helpRec, m_DarkWindow);
                 MaterialArrayDrawers.DrawInspectorGUI(serializedObject, m_RendererMaterialArray, ref m_MaterialEditors, changed);
                 if (GUILayout.Button("Select Materials"))
                 {
                     if (m_RendererMaterialArray != null && m_RendererMaterialArray.materials != null && m_RendererMaterialArray.materials.Length > 0)
                         Selection.objects = m_RendererMaterialArray.materials;
                 }
-                EditorGUILayout.EndVertical();
+                //EditorGUILayout.EndVertical();
                 EditorGUI.indentLevel--;
             }
             else
