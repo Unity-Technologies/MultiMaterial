@@ -32,8 +32,8 @@ namespace UnityLabs.Cinema
                 checkedMaterialObject = new SerializedObject(checkedMaterial);
             }
 
+            // Find the Property (Properties) that changed in the Material Array 
             var setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject, syncAll);
-
 
             var matHash = new HashSet<Material>(materialArray.materials);
 
@@ -134,6 +134,14 @@ namespace UnityLabs.Cinema
             }
         }
 
+        /// <summary>
+        /// Compairs the Control Object to the Checked Object and caches the properties that do not match 
+        /// and are not texture objects.
+        /// </summary>
+        /// <param name="controlObject"></param>
+        /// <param name="checkedObject"></param>
+        /// <param name="syncAll"></param>
+        /// <returns></returns>
         public static Dictionary<string, SerializedProperty> GetPropertiesToChange(SerializedObject controlObject, 
             SerializedObject checkedObject, bool syncAll = false)
         {

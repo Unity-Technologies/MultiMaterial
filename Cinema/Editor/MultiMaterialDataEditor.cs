@@ -18,7 +18,7 @@ namespace UnityLabs.Cinema
             multiMaterialData = serializedObject.FindProperty(MultiMaterialData.materialArrayDataPub);
             materialArray = multiMaterialData.FindPropertyRelative(MaterialArray.materialArrayPub);
             m_MaterialEditors = new MaterialEditor[] {};
-			MaterialArrayDrawers.UpdateShaderNames();
+            MaterialArrayDrawers.UpdateShaderNames();
         }
 
         
@@ -32,7 +32,7 @@ namespace UnityLabs.Cinema
             serializedObject.ApplyModifiedProperties();
             var changed = EditorGUI.EndChangeCheck();
 
-            MaterialArrayDrawers.DrawInspectorGUI(serializedObject, 
+            MaterialArrayDrawers.OnInspectorGUI(serializedObject, 
                 targetData.materialArrayData, ref m_MaterialEditors, changed);
 
             var targetArray = targetData.materialArrayData;
@@ -41,9 +41,12 @@ namespace UnityLabs.Cinema
             {
                 serializedObject.Update();
                 var matHash = new HashSet<Material>();
-                foreach (var mat in targetArray.materials)
+                if (targetArray.materials.Length > 0)
                 {
-                    matHash.Add(mat);
+                    foreach (var mat in targetArray.materials)
+                    {
+                        matHash.Add(mat);
+                    }
                 }
                 foreach (var obj in Selection.objects)
                 {

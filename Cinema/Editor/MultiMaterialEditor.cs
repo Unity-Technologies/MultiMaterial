@@ -42,7 +42,7 @@ namespace UnityLabs.Cinema
                     m_Renderer = multiMaterial.gameObject.GetComponent<Renderer>();
                 }
                 m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
-                EditorGUI.indentLevel++;
+//                EditorGUI.indentLevel++;
                 //var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 if (GUILayout.Button("Creat From Renderer"))
                 {
@@ -70,14 +70,14 @@ namespace UnityLabs.Cinema
                 }
                 //EditorGUI.indentLevel--;
                 //EditorGUI.DrawRect(helpRec, m_DarkWindow);
-                MaterialArrayDrawers.DrawInspectorGUI(serializedObject, m_RendererMaterialArray, ref m_MaterialEditors, changed);
+                MaterialArrayDrawers.OnInspectorGUI(serializedObject, m_RendererMaterialArray, ref m_MaterialEditors, changed);
                 if (GUILayout.Button("Select Materials"))
                 {
                     if (m_RendererMaterialArray != null && m_RendererMaterialArray.materials != null && m_RendererMaterialArray.materials.Length > 0)
                         Selection.objects = m_RendererMaterialArray.materials;
                 }
                 //EditorGUILayout.EndVertical();
-                EditorGUI.indentLevel--;
+//                EditorGUI.indentLevel--;
             }
             else
             {
@@ -90,7 +90,7 @@ namespace UnityLabs.Cinema
                     m_EditorIsReady = true;
                 }
 
-                EditorGUI.indentLevel++;
+//                EditorGUI.indentLevel++;
                 var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUI.DrawRect(helpRec, m_DarkWindow);
                 if (m_EditorIsReady)
@@ -98,7 +98,7 @@ namespace UnityLabs.Cinema
                     m_DataEditor.OnInspectorGUI();
                 }
                 EditorGUILayout.EndVertical();
-                EditorGUI.indentLevel--;
+//                EditorGUI.indentLevel--;
             }
         }
         

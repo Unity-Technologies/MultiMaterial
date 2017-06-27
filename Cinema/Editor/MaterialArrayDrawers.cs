@@ -3,17 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.Rendering;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace UnityLabs.Cinema
 {
-    public class MaterialArrayDrawers
+    public static class MaterialArrayDrawers
     {
         public static string[] shaderNames = new string[0];
         public static GUIContent[] shaderNameGUIContents = new GUIContent[0];
-        public static void DrawInspectorGUI(SerializedObject serializedObject, 
+        static GUIContent s_FoldoutPreDrop;
+        static GUIContent s_Foldout;
+
+        /// <summary>
+        /// Draw the Multi Material Inspector GUI using Material Editors for each material in Material Array 
+        /// </summary>
+        /// <param name="serializedObject"></param>
+        /// <param name="targetArray"></param>
+        /// <param name="materialEditors"></param>
+        /// <param name="changed"></param>
+        public static void OnInspectorGUI(SerializedObject serializedObject, 
             MaterialArray targetArray, ref MaterialEditor[] materialEditors, bool changed = false)
         {
             bool materialEditorReady;
@@ -34,10 +43,26 @@ namespace UnityLabs.Cinema
                 {
                     // for some reason materialEditors[i] is not null here if materials[i] is nulled from select object
                     // popout selector but will register nulled in CheckMaterialEditors()
-                    //if (materialEditors[i] != null)
                     if (targetArray.materials[i] != null)
                     {
-                        DrawMaterialHeaderMaterialView(serializedObject, ref materialEditors[i], targetArray);
+                        OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], targetArray);
+                        // Draw the Material Editor Body
+                        if (materialEditors[i].isVisible)
+                        {
+                            EditorGUI.BeginChangeCheck();
+                            if (GUILayout.Button("Sync to Material"))
+                            {
+                                MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
+                                    materialEditors[i].target as Material, true);
+                            }
+                            materialEditors[i].OnInspectorGUI();
+
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
+                                    materialEditors[i].target as Material);
+                            }
+                        }
                     }
                     else
                     {
@@ -50,7 +75,9 @@ namespace UnityLabs.Cinema
         /// <summary>
         /// Rebuilds material editor if materials in editor do not match those in the material array 
         /// </summary>
-        /// <returns> true if materials rebuilt clean</returns>
+        /// <param name="materialEditors"></param>
+        /// <param name="targetArray"></param>
+        /// <returns></returns>
         public static bool RebuildMaterialEditors(ref MaterialEditor[] materialEditors, MaterialArray targetArray)
         {
             if (!CheckMaterialEditors(materialEditors, targetArray))
@@ -82,6 +109,7 @@ namespace UnityLabs.Cinema
                                 if (rebuildShaders)
                                 {
                                     UpdateShaderNames(material);
+                                    rebuildShaders = false;
                                 }
                             }
                         }
@@ -92,6 +120,18 @@ namespace UnityLabs.Cinema
             return CheckMaterialEditors(materialEditors, targetArray);
         }
 
+        public static void FindMaterialArrayIcons()
+        {
+            s_FoldoutPreDrop = new GUIContent(EditorGUIUtility.IconContent("IN foldout"));
+            s_Foldout = new GUIContent(EditorGUIUtility.IconContent("IN foldout on"));
+        }
+
+        /// <summary>
+        /// Checks that Material Editors are valid
+        /// </summary>
+        /// <param name="materialEditors"></param>
+        /// <param name="targetArray"></param>
+        /// <returns></returns>
         public static bool CheckMaterialEditors(MaterialEditor[] materialEditors, MaterialArray targetArray)
         {
             if (materialEditors == null || materialEditors.Length < 1)
@@ -147,76 +187,97 @@ namespace UnityLabs.Cinema
             shaderNameGUIContents = shaderNames.Select(s=> new GUIContent(s)).ToArray();
         }
 
-        public static void DrawMaterialHeaderMaterialView(SerializedObject serializedObject, 
-            ref MaterialEditor materialEditor, MaterialArray targetArray)
+        /// <summary>
+        /// Popup Shader selector that mimics the material shader popup in the material header
+        /// </summary>
+        /// <param name="material"></param>
+        /// <param name="targetArray"></param>
+        public static void ShaderPopup(Material material, MaterialArray targetArray)
         {
-            if (materialEditor == null || !(materialEditor.target is Material))
-                return;
-
-            // Material Editor body is only drawn when ''m_IsVisible' == true
-            // Normaly set for Material Editor Header foldout
-            // Need to be able to read and write to private field
-            var isVisibleField = typeof(MaterialEditor).GetField("m_IsVisible", BindingFlags.NonPublic | BindingFlags.Instance);
-            var isVisibleValue = isVisibleField.GetValue(materialEditor) as bool? ?? false;
-            var material = materialEditor.target as Material;
-            
-            // We Draw a custom material editor like header since the normal Material Header does not respect all the 
-            // Editor Gui functions that can surround it and since we cannot detect changes in the Shader Foldout
-            EditorGUILayout.BeginHorizontal(EditorStyles.textArea); // Begin Header Area
-
-            isVisibleValue = EditorGUILayout.Foldout(isVisibleValue, GUIContent.none);
-            isVisibleField.SetValue(materialEditor, isVisibleValue);
-            var layout = EditorGUILayout.GetControlRect(false, 36, GUILayout.MinWidth(40), GUILayout.MaxWidth(40));
-
-            var imageRect = new Rect(layout.xMax-32, layout.y, 32, 32);
-            var image = AssetPreview.GetAssetPreview(material);
-            if (image != null)
-            {
-                EditorGUI.DrawPreviewTexture(imageRect, AssetPreview.GetAssetPreview(material));
-            }
-            
-            
-            EditorGUILayout.BeginVertical(); // Begin Title and Shader Area
-
-            EditorGUILayout.LabelField(new GUIContent(material.name));
-
-
-            var intdex = Array.FindIndex(shaderNames, s=> s == material.shader.name);
-
+            var index = Array.FindIndex(shaderNames, s=> s == material.shader.name);
             // Have to use our own popup since you cannot use the material editor popup
-            intdex = EditorGUILayout.Popup(intdex, shaderNameGUIContents);
-//            intdex = EditorGUILayout.Popup(new GUIContent("Shader"), intdex, shaderNameGUIContents, EditorStyles.popup);
-            if (shaderNames[intdex] != material.shader.name)
+            index = EditorGUILayout.Popup(index, shaderNameGUIContents);
+            if (shaderNames[index] != material.shader.name)
             {
                 var matSerial = new SerializedObject(material);
                 matSerial.Update();
 
                 var shaderSerial = matSerial.FindProperty("m_Shader");
-                shaderSerial.objectReferenceValue = Shader.Find(shaderNames[intdex]);
+                shaderSerial.objectReferenceValue = Shader.Find(shaderNames[index]);
                 matSerial.ApplyModifiedProperties();
 
                 MultiMaterialEditorUtilities.SetCheckMaterialShaders(targetArray, material);
             }
+        }
+
+
+        /// <summary>
+        /// Draws a custom GUI that mimics the Material Editor Header.
+        /// Need to use custom GUI since the normal Material Header does not respect all the Editor Gui functions 
+        /// that can surround it and since we cannot detect changes in the Shader Foldout
+        /// </summary>
+        /// <param name="serializedObject"></param>
+        /// <param name="materialEditor"></param>
+        /// <param name="targetArray"></param>
+        public static void OnMiniMaterialArrayHeaderGUI(SerializedObject serializedObject,
+            ref MaterialEditor materialEditor, MaterialArray targetArray)
+        {
+            if (materialEditor == null || !(materialEditor.target is Material))
+                return;
+
+            EditorGUILayout.BeginHorizontal(EditorStyles.textArea); // Begin Header Area
+            if (s_Foldout == null || s_FoldoutPreDrop == null)
+            {
+                FindMaterialArrayIcons();
+            }
+
+            // Material Editor body is only drawn when ''m_IsVisible' == true
+            // Normally set for Material Editor Header foldout
+            // Need to be able to read and write to private field
+            var isVisibleField = typeof(MaterialEditor).GetField("m_IsVisible", BindingFlags.NonPublic | BindingFlags.Instance);
+            var isVisibleValue = isVisibleField.GetValue(materialEditor) as bool? ?? false;
+            if (GUILayout.Button(isVisibleValue? s_Foldout: s_FoldoutPreDrop, GUIStyle.none, 
+                GUILayout.ExpandWidth(false)))
+            {
+                isVisibleField.SetValue(materialEditor, !isVisibleValue);
+            }
+
+            var material = materialEditor.target as Material;
+            var iconRect = EditorGUILayout.GetControlRect(false, 32, GUILayout.MaxWidth(32));
+
+            OnHeaderIconGUI(ref materialEditor, iconRect);
+            
+            EditorGUILayout.BeginVertical(); // Begin Title and Shader Area
+
+            EditorGUILayout.LabelField(new GUIContent(material.name));
+            ShaderPopup(material, targetArray);
 
             EditorGUILayout.EndVertical();  // End Title and Shader Area
             EditorGUILayout.EndHorizontal(); // End Header Area
-
-            // Draw the Material Editor Body
-            if (isVisibleValue)
-            {
-                EditorGUI.BeginChangeCheck();
-                if (GUILayout.Button("Sync to Material"))
-                {
-                    MultiMaterialEditorUtilities.UpdateMaterials(targetArray, material, true);
-                }
-                materialEditor.OnInspectorGUI();
-
-                if (EditorGUI.EndChangeCheck())
-                {
-                    MultiMaterialEditorUtilities.UpdateMaterials(targetArray, material);
-                }
-            }
         }
 
+        static void OnHeaderIconGUI (ref MaterialEditor materialEditor, Rect iconRect)
+        {
+            Texture2D icon = null;
+            if (!materialEditor.HasPreviewGUI ())
+            {
+                //  Fetch isLoadingAssetPreview to ensure that there is no situation where a preview needs a repaint because it hasn't finished loading yet.
+                var isLoadingAssetPreview = AssetPreview.IsLoadingAssetPreview (materialEditor.target.GetInstanceID());
+                icon = AssetPreview.GetAssetPreview (materialEditor.target);
+                if (!icon)
+                {
+                    // We have a static preview it just hasn't been loaded yet. Repaint until we have it loaded.
+                    if (isLoadingAssetPreview)
+                        materialEditor.Repaint ();
+                    icon = AssetPreview.GetMiniThumbnail (materialEditor.target);
+                }
+            }
+        
+            if (materialEditor.HasPreviewGUI ())
+                // OnPreviewGUI must have all events; not just Repaint, or else the control IDs will mis-match.
+                materialEditor.OnPreviewGUI (iconRect, GUIStyle.none);
+            else if (icon)
+                EditorGUI.DrawPreviewTexture(iconRect, icon);
+        }
     }
 }
