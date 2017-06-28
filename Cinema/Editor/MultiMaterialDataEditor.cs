@@ -28,12 +28,19 @@ namespace UnityLabs.Cinema
 
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
-            EditorGUILayout.PropertyField(materialArray, new GUIContent("Multi Material"), true);
-            serializedObject.ApplyModifiedProperties();
+            //EditorGUILayout.PropertyField(materialArray, new GUIContent("Multi Material"), true);
+	        var materialPropList = new List<SerializedProperty>();
+            materialArray.arraySize = EditorGUILayout.IntField("Size", materialArray.arraySize);
+	        for (var i = 0; i < materialArray.arraySize; ++i)
+	        {
+		        materialPropList.Add(materialArray.GetArrayElementAtIndex(i));
+	        }
+	        var materialProperties = materialPropList.ToArray();
+	        serializedObject.ApplyModifiedProperties();
             var changed = EditorGUI.EndChangeCheck();
 
             MaterialArrayDrawers.OnInspectorGUI(serializedObject, 
-                targetData.materialArrayData, ref m_MaterialEditors, changed);
+                targetData.materialArrayData, ref m_MaterialEditors, changed, materialProperties);
 
             var targetArray = targetData.materialArrayData;
 

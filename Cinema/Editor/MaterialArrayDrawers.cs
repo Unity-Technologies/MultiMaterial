@@ -22,8 +22,9 @@ namespace UnityLabs.Cinema
         /// <param name="targetArray"></param>
         /// <param name="materialEditors"></param>
         /// <param name="changed"></param>
+        /// <param name="MaterialProperties"></param>
         public static void OnInspectorGUI(SerializedObject serializedObject, 
-            MaterialArray targetArray, ref MaterialEditor[] materialEditors, bool changed = false)
+            MaterialArray targetArray, ref MaterialEditor[] materialEditors, bool changed = false, SerializedProperty[] MaterialProperties = null)
         {
             bool materialEditorReady;
             
@@ -43,9 +44,12 @@ namespace UnityLabs.Cinema
                 {
                     // for some reason materialEditors[i] is not null here if materials[i] is nulled from select object
                     // popout selector but will register nulled in CheckMaterialEditors()
-                    if (targetArray.materials[i] != null)
+                    if (targetArray.materials[i] != null &&  materialEditors[i] != null)
                     {
-                        OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], targetArray);
+                        if (MaterialProperties != null)
+                            OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], targetArray, MaterialProperties[i]);
+                        else
+                            OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], targetArray);
                         // Draw the Material Editor Body
                         if (materialEditors[i].isVisible)
                         {
@@ -66,9 +70,54 @@ namespace UnityLabs.Cinema
                     }
                     else
                     {
-                        EditorGUILayout.LabelField("IS NULL!!!");
+                        if (MaterialProperties != null)
+                        {
+                            EditorGUI.BeginChangeCheck();
+                            MaterialProperties[i].serializedObject.Update();
+                            EditorGUILayout.PropertyField(MaterialProperties[i], new GUIContent("Material"));
+                            MaterialProperties[i].serializedObject.ApplyModifiedProperties();
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                RebuildMaterialEditors(ref materialEditors, targetArray);
+                            }
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField("IS NULL!!!");
+                        }
                     }
                 }
+            }
+        }
+
+        public static void OnMaterialInspectorGUI(SerializedObject serializedObject, 
+            MaterialArray targetArray, ref MaterialEditor materialEditor, Material material,
+            bool changed = false)
+        {
+            if (material != null)
+            {
+                OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditor, targetArray);
+                // Draw the Material Editor Body
+                if (materialEditor.isVisible)
+                {
+                    EditorGUI.BeginChangeCheck();
+                    if (GUILayout.Button("Sync to Material"))
+                    {
+                        MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
+                            materialEditor.target as Material, true);
+                    }
+                    materialEditor.OnInspectorGUI();
+
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
+                            materialEditor.target as Material);
+                    }
+                }
+            }
+            else
+            {
+                EditorGUILayout.LabelField("IS NULL!!!");
             }
         }
 
@@ -144,14 +193,28 @@ namespace UnityLabs.Cinema
                 return false;
             for (var i = 0; i < targetArray.materials.Length; i++)
             {
-                if (materialEditors[i] && targetArray.materials[i] != null)
+                if (targetArray.materials[i] != null)
                 {
-                    if (materialEditors[i] == null || materialEditors[i].target == null 
-                        || targetArray.materials[i] == null)
+                    if (materialEditors[i] == null || (Material)materialEditors[i].target != targetArray.materials[i])
+                    {
                         return false;
-                    if ((Material)materialEditors[i].target != targetArray.materials[i])
-                        return false;
+                    }
                 }
+                if (materialEditors[i] != null)
+                {
+                    if (targetArray.materials[i] == null || (Material)materialEditors[i].target != targetArray.materials[i])
+                    {
+                        return false;
+                    }
+                }
+//                if (materialEditors[i] && targetArray.materials[i] != null)
+//                {
+//                    if (materialEditors[i] == null || materialEditors[i].target == null 
+//                        || targetArray.materials[i] == null)
+//                        return false;
+//                    if ((Material)materialEditors[i].target != targetArray.materials[i])
+//                        return false;
+//                }
             }
 
             return true;
@@ -220,7 +283,7 @@ namespace UnityLabs.Cinema
         /// <param name="materialEditor"></param>
         /// <param name="targetArray"></param>
         public static void OnMiniMaterialArrayHeaderGUI(SerializedObject serializedObject,
-            ref MaterialEditor materialEditor, MaterialArray targetArray)
+            ref MaterialEditor materialEditor, MaterialArray targetArray, SerializedProperty serializedMaterial = null)
         {
             if (materialEditor == null || !(materialEditor.target is Material))
                 return;
@@ -248,8 +311,14 @@ namespace UnityLabs.Cinema
             OnHeaderIconGUI(ref materialEditor, iconRect);
             
             EditorGUILayout.BeginVertical(); // Begin Title and Shader Area
-
-            EditorGUILayout.LabelField(new GUIContent(material.name));
+            if (serializedMaterial == null)
+                EditorGUILayout.LabelField(new GUIContent(material.name));
+            else
+            {
+                serializedMaterial.serializedObject.Update();
+                EditorGUILayout.PropertyField(serializedMaterial, GUIContent.none);
+                serializedMaterial.serializedObject.ApplyModifiedProperties();
+            }
             ShaderPopup(material, targetArray);
 
             EditorGUILayout.EndVertical();  // End Title and Shader Area
