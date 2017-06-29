@@ -9,13 +9,14 @@ namespace UnityLabs.Cinema
     public class MultiMaterialDataEditor : Editor
     {
         [SerializeField]
+        MaterialEditor[] m_MaterialEditors;
+
+        [SerializeField]
         SerializedProperty m_MultiArray;
 
         [SerializeField]
         SerializedProperty m_Materials;
-
-        MaterialEditor[] m_MaterialEditors;
-
+        
         void OnEnable()
         {
             m_MultiArray = serializedObject.FindProperty(MultiMaterialData.materialArrayPub);
