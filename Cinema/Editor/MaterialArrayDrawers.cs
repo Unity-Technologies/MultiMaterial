@@ -23,8 +23,8 @@ namespace UnityLabs.Cinema
         /// <param name="materialEditors"></param>
         /// <param name="changed"></param>
         /// <param name="MaterialProperties"></param>
-        public static void OnInspectorGUI(SerializedObject serializedObject, 
-            MaterialArray targetArray, ref MaterialEditor[] materialEditors, bool changed = false, SerializedProperty[] MaterialProperties = null)
+        public static void OnInspectorGUI(SerializedObject serializedObject, MaterialArray targetArray, 
+            ref MaterialEditor[] materialEditors, bool changed = false, SerializedProperty[] MaterialProperties = null)
         {
             bool materialEditorReady;
             
@@ -42,9 +42,7 @@ namespace UnityLabs.Cinema
             {
                 for (var i = 0; i < materialEditors.Length; i++)
                 {
-                    // for some reason materialEditors[i] is not null here if materials[i] is nulled from select object
-                    // popout selector but will register nulled in CheckMaterialEditors()
-                    if (targetArray.materials[i] != null &&  materialEditors[i] != null)
+                    if (targetArray.materials[i] != null && materialEditors[i] != null)
                     {
                         if (MaterialProperties != null)
                             OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], targetArray, MaterialProperties[i]);
@@ -87,37 +85,6 @@ namespace UnityLabs.Cinema
                         }
                     }
                 }
-            }
-        }
-
-        public static void OnMaterialInspectorGUI(SerializedObject serializedObject, 
-            MaterialArray targetArray, ref MaterialEditor materialEditor, Material material,
-            bool changed = false)
-        {
-            if (material != null)
-            {
-                OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditor, targetArray);
-                // Draw the Material Editor Body
-                if (materialEditor.isVisible)
-                {
-                    EditorGUI.BeginChangeCheck();
-                    if (GUILayout.Button("Sync to Material"))
-                    {
-                        MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
-                            materialEditor.target as Material, true);
-                    }
-                    materialEditor.OnInspectorGUI();
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        MultiMaterialEditorUtilities.UpdateMaterials(targetArray, 
-                            materialEditor.target as Material);
-                    }
-                }
-            }
-            else
-            {
-                EditorGUILayout.LabelField("IS NULL!!!");
             }
         }
 
@@ -207,16 +174,7 @@ namespace UnityLabs.Cinema
                         return false;
                     }
                 }
-//                if (materialEditors[i] && targetArray.materials[i] != null)
-//                {
-//                    if (materialEditors[i] == null || materialEditors[i].target == null 
-//                        || targetArray.materials[i] == null)
-//                        return false;
-//                    if ((Material)materialEditors[i].target != targetArray.materials[i])
-//                        return false;
-//                }
             }
-
             return true;
         }
 
@@ -273,7 +231,6 @@ namespace UnityLabs.Cinema
             }
         }
 
-
         /// <summary>
         /// Draws a custom GUI that mimics the Material Editor Header.
         /// Need to use custom GUI since the normal Material Header does not respect all the Editor Gui functions 
@@ -282,6 +239,7 @@ namespace UnityLabs.Cinema
         /// <param name="serializedObject"></param>
         /// <param name="materialEditor"></param>
         /// <param name="targetArray"></param>
+        /// <param name="serializedMaterial"></param>
         public static void OnMiniMaterialArrayHeaderGUI(SerializedObject serializedObject,
             ref MaterialEditor materialEditor, MaterialArray targetArray, SerializedProperty serializedMaterial = null)
         {
@@ -330,7 +288,8 @@ namespace UnityLabs.Cinema
             Texture2D icon = null;
             if (!materialEditor.HasPreviewGUI ())
             {
-                //  Fetch isLoadingAssetPreview to ensure that there is no situation where a preview needs a repaint because it hasn't finished loading yet.
+                // Fetch isLoadingAssetPreview to ensure that there is no situation where a preview needs a repaint 
+                // because it hasn't finished loading yet.
                 var isLoadingAssetPreview = AssetPreview.IsLoadingAssetPreview (materialEditor.target.GetInstanceID());
                 icon = AssetPreview.GetAssetPreview (materialEditor.target);
                 if (!icon)

@@ -24,7 +24,7 @@ namespace UnityLabs.Cinema
         }
 
 #if UNITY_EDITOR
-        public const string multiMaterialPub = "m_MultiMaterialData";
+        public const string multiMaterialDataPub = "m_MultiMaterialData";
         public const string materialArrayPub = "m_MaterialArray";
 #endif
     }

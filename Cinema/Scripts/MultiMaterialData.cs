@@ -12,7 +12,7 @@ namespace UnityLabs.Cinema
 
 #if UNITY_EDITOR
         public bool[] overrideFields;
-        public const string materialArrayDataPub = "m_MaterialArrayData";
+        public const string materialArrayPub = "m_MaterialArrayData";
 #endif
         public MaterialArray materialArrayData
         {
@@ -28,7 +28,7 @@ namespace UnityLabs.Cinema
         Material[] m_Materials;
 
 #if UNITY_EDITOR
-        public const string materialArrayPub = "m_Materials";
+        public const string materialsPub = "m_Materials";
 #endif
         // TODO if want to add runtime modifications should allow use of SharedMaterials
         public Material[] materials
