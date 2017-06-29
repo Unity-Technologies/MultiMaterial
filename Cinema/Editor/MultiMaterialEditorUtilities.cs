@@ -8,18 +8,16 @@ namespace UnityLabs.Cinema
     public class MultiMaterialEditorUtilities
     {
         public static void UpdateMaterials(MaterialArray materialArray, 
-            MaterialEditor controlMatialEditor, bool syncAll = false)
+            Material controlMatial, bool syncAll = false)
         {
-            if (materialArray.materials.Length < 1 && controlMatialEditor == null 
-                || controlMatialEditor.target == null)
+            if (materialArray.materials.Length < 1 && controlMatial == null)
             {
                 return;
             }
 
-            SetCheckMaterialShaders(materialArray, controlMatialEditor.target as Material);
-
-            var controlMatial = controlMatialEditor.target as Material;
-            var setProperties = new Dictionary<string, SerializedProperty>();
+            SetCheckMaterialShaders(materialArray, controlMatial);
+            var controlMaterialObject = new SerializedObject(controlMatial);
+            SerializedObject checkedMaterialObject = null;
             if (!syncAll)
             {
                 Material checkedMaterial = null;
@@ -31,20 +29,11 @@ namespace UnityLabs.Cinema
                         break;
                     }
                 }
-                var controlMaterialObject = new SerializedObject(controlMatialEditor.target);
-                var checkedMaterialObject = new SerializedObject(checkedMaterial);
-
-                setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject);
-            }
-            else
-            {
-                var controlMaterialObject = new SerializedObject(controlMatialEditor.target);
-
-                setProperties = GetPropertiesToChange(controlMaterialObject, null, true);
+                checkedMaterialObject = new SerializedObject(checkedMaterial);
             }
 
-
-
+            // Find the Property (Properties) that changed in the Material Array 
+            var setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject, syncAll);
 
             var matHash = new HashSet<Material>(materialArray.materials);
 
@@ -145,6 +134,14 @@ namespace UnityLabs.Cinema
             }
         }
 
+        /// <summary>
+        /// Compairs the Control Object to the Checked Object and caches the properties that do not match 
+        /// and are not texture objects.
+        /// </summary>
+        /// <param name="controlObject"></param>
+        /// <param name="checkedObject"></param>
+        /// <param name="syncAll"></param>
+        /// <returns></returns>
         public static Dictionary<string, SerializedProperty> GetPropertiesToChange(SerializedObject controlObject, 
             SerializedObject checkedObject, bool syncAll = false)
         {
@@ -256,10 +253,14 @@ namespace UnityLabs.Cinema
             return setProperties;
         }
 
+
         public static void SetCheckMaterialShaders(MaterialArray materialArray, Material mat)
         {
             var matSerial = new SerializedObject(mat);
+            matSerial.Update();
             var shaderSerial = matSerial.FindProperty("m_Shader");
+            matSerial.ApplyModifiedProperties();
+
             foreach (var material in materialArray.materials)
             {
                 if (material == null)
@@ -270,7 +271,7 @@ namespace UnityLabs.Cinema
                 {
                     targetMatSerial.Update();
                     targetShader.objectReferenceValue = shaderSerial.objectReferenceValue;
-                    targetMatSerial.ApplyModifiedPropertiesWithoutUndo();
+                    targetMatSerial.ApplyModifiedProperties();
                 }
             }
         }

@@ -1,4 +1,6 @@
-﻿using UnityEditor;
+﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
 using UnityEngine;
 
 namespace UnityLabs.Cinema
@@ -6,23 +8,69 @@ namespace UnityLabs.Cinema
     [CustomEditor(typeof(MultiMaterial), true)]
     public class MultiMaterialEditor : Editor
     {
-//        SerializedProperty m_MultiMaterialData;
-        MultiMaterialDataEditor m_DataEditor;
-        bool m_EditorIsReady;
-        Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
-
+        [SerializeField]
         MaterialEditor[] m_MaterialEditors;
-        MaterialArray m_RendererMaterialArray;
+
+        [SerializeField]
+        MaterialArray m_MaterialArray;
+
+        [SerializeField]
         Renderer m_Renderer;
+
+        [SerializeField]
+        MaterialArray m_RendererMaterialArray;
+
+        [SerializeField]
+        SerializedProperty m_SerializedMaterials;
+
+        [SerializeField]
+        MultiMaterial m_MultiMaterial;
+
+        [SerializeField]
+        SerializedObject m_MultiMaterialData;
+
+        [SerializeField]
+        SerializedProperty[] m_MaterialProperties;
+
+        [SerializeField]
+        bool m_isDirty;
+
 
         public void OnEnable()
         {
             m_MaterialEditors = new MaterialEditor[] {};
             m_RendererMaterialArray = new MaterialArray();
-            var multiMaterial = target as MultiMaterial;
-            if (multiMaterial != null)
-                m_Renderer = multiMaterial.gameObject.GetComponent<Renderer>();
-            m_EditorIsReady = false;
+            m_MultiMaterial = target as MultiMaterial;
+            if (m_MultiMaterial != null)
+            {
+                ValidateEditorData(m_MultiMaterial.multiMaterialData == null);
+            }
+        }
+
+        void ValidateEditorData(bool useRenderer)
+        {
+            m_MultiMaterial = target as MultiMaterial;
+            m_Renderer = m_MultiMaterial.gameObject.GetComponent<Renderer>();
+            m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
+                
+            m_MultiMaterialData = useRenderer? serializedObject : new SerializedObject(m_MultiMaterial.multiMaterialData);
+            m_MaterialArray = useRenderer? m_RendererMaterialArray : m_MultiMaterial.materialArray;
+            if (useRenderer)
+            {
+                m_MaterialProperties = null;
+            }
+            else
+            {
+                m_SerializedMaterials = m_MultiMaterialData.FindProperty(string.Format("{0}.{1}", 
+                    MultiMaterialData.materialArrayPub, MaterialArray.materialsPub));
+
+                var materialPropList = new List<SerializedProperty>();
+                for (var i = 0; i < m_SerializedMaterials.arraySize; ++i)
+                {
+                    materialPropList.Add(m_SerializedMaterials.GetArrayElementAtIndex(i));
+                }
+                m_MaterialProperties = materialPropList.ToArray();
+            }
         }
 
         public override void OnInspectorGUI()
@@ -32,124 +80,108 @@ namespace UnityLabs.Cinema
             base.OnInspectorGUI();
             serializedObject.ApplyModifiedProperties();
 
-            var multiMaterial = target as MultiMaterial;
-            var changed = EditorGUI.EndChangeCheck();
+            var useRenderer = m_MultiMaterial.multiMaterialData == null;
 
-            if (multiMaterial.multiMaterialData == null)
+            if (!useRenderer && m_SerializedMaterials == null)
+                m_isDirty = true;
+
+            if (m_isDirty)
             {
-                if (m_Renderer == null)
-                {
-                    m_Renderer = multiMaterial.gameObject.GetComponent<Renderer>();
-                }
-                m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
-                EditorGUI.indentLevel++;
-                var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                if (GUILayout.Button("Creat From Renderer"))
-                {
-                    var saveMultiMaterialData = new MultiMaterialData { materialArrayData = m_RendererMaterialArray };
+                ValidateEditorData(useRenderer);
+            }
 
-                    var path = EditorUtility.SaveFilePanelInProject("Multi Material Data Save Window",
-                        m_Renderer.gameObject.name + " Multi Material Data", "asset",
-                        "Enter a file name to save the multi material data to");
+            m_isDirty = EditorGUI.EndChangeCheck();
 
-                    if (!string.IsNullOrEmpty(path))
-                    {
-                        AssetDatabase.CreateAsset(saveMultiMaterialData, path);
-                        AssetDatabase.Refresh();
-                    }
-
-                    var loadMultiMaterialData = AssetDatabase.LoadAssetAtPath<MultiMaterialData>(path);
-                    if (loadMultiMaterialData != null)
-                    {
-                        serializedObject.Update();
-                        var dataProp = serializedObject.FindProperty(MultiMaterial.multiMaterialPub);
-                        dataProp.objectReferenceValue = loadMultiMaterialData;
-                        serializedObject.ApplyModifiedProperties();
-                    }
-
-                }
-                EditorGUI.DrawRect(helpRec, m_DarkWindow);
-                MaterialArrayDrawers.DrawInspectorGUI(serializedObject, m_RendererMaterialArray, ref m_MaterialEditors, changed);
-                if (GUILayout.Button("Select Materials"))
-                {
-                    if (m_RendererMaterialArray != null && m_RendererMaterialArray.materials != null && m_RendererMaterialArray.materials.Length > 0)
-                        Selection.objects = m_RendererMaterialArray.materials;
-                }
-                EditorGUILayout.EndVertical();
-                EditorGUI.indentLevel--;
+            if (useRenderer)
+            {
+                m_isDirty = CreateMultiMaterialDataButton(m_isDirty);
             }
             else
             {
-                if (changed || !CheckEditor())
-                {
-                    m_EditorIsReady = RebuildEditor() && Event.current.type == EventType.Layout;
-                }
-                else
-                {
-                    m_EditorIsReady = true;
-                }
-
-                EditorGUI.indentLevel++;
-                var helpRec = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUI.DrawRect(helpRec, m_DarkWindow);
-                if (m_EditorIsReady)
-                {
-                    m_DataEditor.OnInspectorGUI();
-                }
-                EditorGUILayout.EndVertical();
-                EditorGUI.indentLevel--;
+                EditorGUI.BeginChangeCheck();
+                m_MultiMaterialData.Update();
+                m_SerializedMaterials.arraySize = EditorGUILayout.IntField("Size", m_SerializedMaterials.arraySize);
+                m_MultiMaterialData.ApplyModifiedProperties();
+                m_isDirty = m_isDirty || EditorGUI.EndChangeCheck();
             }
-        }
-        
-        bool RebuildEditor()
-        {
-            if (!CheckEditor())
+
+            if (m_isDirty)
+                return;
+
+            MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, m_MaterialArray, 
+                ref m_MaterialEditors, m_isDirty, m_MaterialProperties);
+
+            if (!useRenderer)
             {
-                if (m_DataEditor != null)
+                if (GUILayout.Button("Add Selected"))
                 {
-                    DestroyImmediate(m_DataEditor);
-                    m_DataEditor = null;
-                }
-                
-                if (m_DataEditor == null)
-                {
-                    var multiMaterial = target as MultiMaterial;
-                    if (multiMaterial != null && multiMaterial.multiMaterialData != null)
+                    m_MultiMaterialData.Update();
+                    var matHash = new HashSet<Material>();
+                    if (m_MaterialArray.materials.Length > 0)
                     {
-                        m_DataEditor = CreateEditor(multiMaterial.multiMaterialData) as MultiMaterialDataEditor;
+                        foreach (var mat in m_MaterialArray.materials)
+                        {
+                            matHash.Add(mat);
+                        }
                     }
+                    foreach (var obj in Selection.objects)
+                    {
+                        var mat = obj as Material;
+                        if (mat != null)
+                        {
+                            matHash.Add(mat);
+                        }
+                    }
+                    m_MultiMaterial.materialArray.materials = matHash.ToArray();
+
+                    m_MultiMaterialData.ApplyModifiedProperties();
+
+                    m_isDirty = true;
+                    return;
                 }
             }
-            return CheckEditor();
-        }
-
-        bool CheckEditor()
-        {
-            if (m_DataEditor == null)
-                return false;
-
-            var multiMaterial = target as MultiMaterial;
-            if (multiMaterial == null || multiMaterial.multiMaterialData == null)
-                return false;
-
-            return m_DataEditor.target as MultiMaterialData == multiMaterial.multiMaterialData;
-        }
-
-        void OnDestroy()
-        {
-            if (m_DataEditor != null)
+            
+            if (GUILayout.Button("Select Materials"))
             {
-                DestroyImmediate(m_DataEditor);
-                m_DataEditor = null;
-            }
-            if (m_MaterialEditors != null)
-            {
-                foreach (var materialEditor in m_MaterialEditors)
+                if (m_MaterialArray != null && m_MaterialArray.materials != null &&
+                    m_MaterialArray.materials.Length > 0)
                 {
-                    DestroyImmediate(materialEditor);
+                    Selection.objects = m_MaterialArray.materials;
                 }
-                m_MaterialEditors = null;
             }
+
+            m_isDirty = false;
         }
+
+        bool CreateMultiMaterialDataButton(bool changed)
+        {
+            if (GUILayout.Button("Create From Renderer"))
+            {
+                var saveMultiMaterialData = CreateInstance<MultiMaterialData>();
+                saveMultiMaterialData.materialArrayData = m_RendererMaterialArray;
+
+                var path = EditorUtility.SaveFilePanelInProject("Multi Material Data Save Window",
+                    m_Renderer.gameObject.name + " Multi Material Data", "asset",
+                    "Enter a file name to save the multi material data to");
+
+                if (!string.IsNullOrEmpty(path))
+                {
+                    AssetDatabase.CreateAsset(saveMultiMaterialData, path);
+                    AssetDatabase.Refresh();
+                }
+
+                var loadMultiMaterialData = AssetDatabase.LoadAssetAtPath<MultiMaterialData>(path);
+                if (loadMultiMaterialData != null)
+                {
+                    serializedObject.Update();
+                    var dataProp = serializedObject.FindProperty(MultiMaterial.multiMaterialDataPub);
+                    dataProp.objectReferenceValue = loadMultiMaterialData;
+                    serializedObject.ApplyModifiedProperties();
+                }
+                return true;
+            }
+            return changed;
+        }
+                
     }
 }
