@@ -3,38 +3,20 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
     [CustomEditor(typeof(MultiMaterial), true)]
     public class MultiMaterialEditor : Editor
     {
-        [SerializeField]
         MaterialEditor[] m_MaterialEditors;
-
-        [SerializeField]
         MaterialArray m_MaterialArray;
-
-        [SerializeField]
         Renderer m_Renderer;
-
-        [SerializeField]
         MaterialArray m_RendererMaterialArray;
-
-        [SerializeField]
         SerializedProperty m_SerializedMaterials;
-
-        [SerializeField]
         MultiMaterial m_MultiMaterial;
-
-        [SerializeField]
         SerializedObject m_MultiMaterialData;
-
-        [SerializeField]
         SerializedProperty[] m_MaterialProperties;
-
-        [SerializeField]
-        bool m_isDirty;
-
+        bool m_SetDirty;
 
         public void OnEnable()
         {
@@ -83,33 +65,33 @@ namespace UnityLabs.Cinema
             var useRenderer = m_MultiMaterial.multiMaterialData == null;
 
             if (!useRenderer && m_SerializedMaterials == null)
-                m_isDirty = true;
+                m_SetDirty = true;
 
-            if (m_isDirty)
+            if (m_SetDirty)
             {
                 ValidateEditorData(useRenderer);
             }
 
-            m_isDirty = EditorGUI.EndChangeCheck();
+            m_SetDirty = EditorGUI.EndChangeCheck();
 
             if (useRenderer)
             {
-                m_isDirty = CreateMultiMaterialDataButton(m_isDirty);
+                m_SetDirty = CreateMultiMaterialDataButton(m_SetDirty);
             }
             else
             {
                 EditorGUI.BeginChangeCheck();
                 m_MultiMaterialData.Update();
-                m_SerializedMaterials.arraySize = EditorGUILayout.IntField("Size", m_SerializedMaterials.arraySize);
+                m_SerializedMaterials.arraySize = EditorGUILayout.DelayedIntField("Size", m_SerializedMaterials.arraySize);
                 m_MultiMaterialData.ApplyModifiedProperties();
-                m_isDirty = m_isDirty || EditorGUI.EndChangeCheck();
+                m_SetDirty = m_SetDirty || EditorGUI.EndChangeCheck();
             }
 
-            if (m_isDirty)
+            if (m_SetDirty)
                 return;
 
             MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, m_MaterialArray, 
-                ref m_MaterialEditors, m_isDirty, m_MaterialProperties);
+                ref m_MaterialEditors, m_SetDirty, m_MaterialProperties);
 
             if (!useRenderer)
             {
@@ -136,7 +118,7 @@ namespace UnityLabs.Cinema
 
                     m_MultiMaterialData.ApplyModifiedProperties();
 
-                    m_isDirty = true;
+                    m_SetDirty = true;
                     return;
                 }
             }
@@ -150,7 +132,7 @@ namespace UnityLabs.Cinema
                 }
             }
 
-            m_isDirty = false;
+            m_SetDirty = false;
         }
 
         bool CreateMultiMaterialDataButton(bool changed)
@@ -182,6 +164,6 @@ namespace UnityLabs.Cinema
             }
             return changed;
         }
-                
+        
     }
 }

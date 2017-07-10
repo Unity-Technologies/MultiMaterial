@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
     [RequireComponent(typeof(Renderer))]
     public class MultiMaterial : MonoBehaviour

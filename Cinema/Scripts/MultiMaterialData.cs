@@ -1,9 +1,9 @@
 ﻿using System;
 using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
-    [CreateAssetMenu(menuName = "UnityLabs/Cinema/MultiMaterialData")]
+    [CreateAssetMenu(menuName = "MultiMaterial/MultiMaterialData")]
     [Serializable]
     public class MultiMaterialData : ScriptableObject
     {
@@ -11,7 +11,6 @@ namespace UnityLabs.Cinema
         MaterialArray m_MaterialArrayData;
 
 #if UNITY_EDITOR
-        public bool[] overrideFields;
         public const string materialArrayPub = "m_MaterialArrayData";
 #endif
         public MaterialArray materialArrayData
@@ -30,7 +29,6 @@ namespace UnityLabs.Cinema
 #if UNITY_EDITOR
         public const string materialsPub = "m_Materials";
 #endif
-        // TODO if want to add runtime modifications should allow use of SharedMaterials
         public Material[] materials
         {
             get { return m_Materials; }

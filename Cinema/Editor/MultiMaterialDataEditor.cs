@@ -3,18 +3,13 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
     [CustomEditor(typeof(MultiMaterialData))]
     public class MultiMaterialDataEditor : Editor
     {
-        [SerializeField]
         MaterialEditor[] m_MaterialEditors;
-
-        [SerializeField]
         SerializedProperty m_MultiArray;
-
-        [SerializeField]
         SerializedProperty m_Materials;
         
         void OnEnable()
@@ -33,7 +28,7 @@ namespace UnityLabs.Cinema
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
             var materialPropList = new List<SerializedProperty>();
-            m_Materials.arraySize = EditorGUILayout.IntField("Size", m_Materials.arraySize);
+            m_Materials.arraySize = EditorGUILayout.DelayedIntField("Size", m_Materials.arraySize);
             for (var i = 0; i < m_Materials.arraySize; ++i)
             {
                 materialPropList.Add(m_Materials.GetArrayElementAtIndex(i));

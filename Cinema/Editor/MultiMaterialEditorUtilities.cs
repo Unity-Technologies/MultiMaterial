@@ -3,27 +3,27 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
     public class MultiMaterialEditorUtilities
     {
         public static void UpdateMaterials(MaterialArray materialArray, 
-            Material controlMatial, bool syncAll = false)
+            Material controlMaterial, bool syncAll = false)
         {
-            if (materialArray.materials.Length < 1 && controlMatial == null)
+            if (materialArray.materials.Length < 1 && controlMaterial == null)
             {
                 return;
             }
 
-            SetCheckMaterialShaders(materialArray, controlMatial);
-            var controlMaterialObject = new SerializedObject(controlMatial);
+            SetCheckMaterialShaders(materialArray, controlMaterial);
+            var controlMaterialObject = new SerializedObject(controlMaterial);
             SerializedObject checkedMaterialObject = null;
             if (!syncAll)
             {
                 Material checkedMaterial = null;
                 foreach (var material in materialArray.materials)
                 {
-                    if (material != controlMatial)
+                    if (material != controlMaterial)
                     {
                         checkedMaterial = material;
                         break;
@@ -33,97 +33,88 @@ namespace UnityLabs.Cinema
             }
 
             // Find the Property (Properties) that changed in the Material Array 
-            var setProperties = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject, syncAll);
+            var propertiesToChange = GetPropertiesToChange(controlMaterialObject, checkedMaterialObject, syncAll);
 
             var matHash = new HashSet<Material>(materialArray.materials);
 
-            //Linq experession contents
-            /*
-            var matObjs = new List<SerializedObject>();
-            foreach (var mat in matHash)
-            {
-                if (mat != null)
-                    matObjs.Add(new SerializedObject(mat));
-            }
-            */
+            //Convert each material in the hash into a list of serialized accessors.
             var matObjs = (from mat in matHash where mat != null select new SerializedObject(mat)).ToList();
 
-            if (setProperties != null && setProperties.Count > 0)
+            if (propertiesToChange != null && propertiesToChange.Count > 0)
             {
                 foreach (var matObj in matObjs) { matObj.Update();}
 
-                foreach (var property in setProperties)
+                foreach (var propertyToChange in propertiesToChange)
                 {
                     foreach (var matObj in matObjs)
                     {
-                        var prop = matObj.FindProperty(property.Key);
-                        if (prop != null)
+                        var serializedProperty = matObj.FindProperty(propertyToChange.Key);
+                        if (serializedProperty != null)
                         {
-                            switch (prop.propertyType)
+                            switch (serializedProperty.propertyType)
                             {
                                 case SerializedPropertyType.AnimationCurve:
-                                    prop.animationCurveValue = property.Value.animationCurveValue;
+                                    serializedProperty.animationCurveValue = 
+                                        propertyToChange.Value.animationCurveValue;
                                     break;
                                 case SerializedPropertyType.ArraySize:
-                                    if (prop.isArray)
-                                        prop.arraySize = property.Value.arraySize;
+                                    if (serializedProperty.isArray)
+                                        serializedProperty.arraySize = propertyToChange.Value.arraySize;
                                     break;
                                 case SerializedPropertyType.Boolean:
-                                    prop.boolValue = property.Value.boolValue;
+                                    serializedProperty.boolValue = propertyToChange.Value.boolValue;
                                     break;
                                 case SerializedPropertyType.Bounds:
-                                    prop.boundsValue = property.Value.boundsValue;
+                                    serializedProperty.boundsValue = propertyToChange.Value.boundsValue;
                                     break;
                                 case SerializedPropertyType.Character:
-                                    // TODO figure out what value this is.
                                     break;
                                 case SerializedPropertyType.Color:
-                                    prop.colorValue = property.Value.colorValue;
+                                    serializedProperty.colorValue = propertyToChange.Value.colorValue;
                                     break;
                                 case SerializedPropertyType.Enum:
-                                    prop.enumValueIndex = property.Value.enumValueIndex;
+                                    serializedProperty.enumValueIndex = propertyToChange.Value.enumValueIndex;
                                     break;
                                 case SerializedPropertyType.ExposedReference:
-                                    prop.exposedReferenceValue = property.Value.exposedReferenceValue;
+                                    serializedProperty.exposedReferenceValue = 
+                                        propertyToChange.Value.exposedReferenceValue;
                                     break;
                                 case SerializedPropertyType.FixedBufferSize:
                                     // SerializedProperty.fixedBufferSize is read only
                                     break;
                                 case SerializedPropertyType.Generic:
-                                    // TODO figure out what value this is.
                                     break;
                                 case SerializedPropertyType.Gradient:
-                                    // TODO figure out what value this is.
                                     break;
                                 case SerializedPropertyType.Float:
-                                    prop.floatValue = property.Value.floatValue;
+                                    serializedProperty.floatValue = propertyToChange.Value.floatValue;
                                     break;
                                 case SerializedPropertyType.Integer:
-                                    prop.intValue = property.Value.intValue;
+                                    serializedProperty.intValue = propertyToChange.Value.intValue;
                                     break;
                                 case SerializedPropertyType.String:
-                                    prop.stringValue = property.Value.stringValue;
+                                    serializedProperty.stringValue = propertyToChange.Value.stringValue;
                                     break;
                                 case SerializedPropertyType.Rect:
-                                    prop.rectValue = property.Value.rectValue;
+                                    serializedProperty.rectValue = propertyToChange.Value.rectValue;
                                     break;
                                 case SerializedPropertyType.Quaternion:
-                                    prop.quaternionValue = property.Value.quaternionValue;
+                                    serializedProperty.quaternionValue = propertyToChange.Value.quaternionValue;
                                     break;
                                 case SerializedPropertyType.Vector2:
-                                    prop.vector2Value = property.Value.vector2Value;
+                                    serializedProperty.vector2Value = propertyToChange.Value.vector2Value;
                                     break;
                                 case SerializedPropertyType.Vector3:
-                                    prop.vector3Value = property.Value.vector3Value;
+                                    serializedProperty.vector3Value = propertyToChange.Value.vector3Value;
                                     break;
                                 case SerializedPropertyType.Vector4:
-                                    prop.vector4Value = property.Value.vector4Value;
+                                    serializedProperty.vector4Value = propertyToChange.Value.vector4Value;
                                     break;
                                 case SerializedPropertyType.ObjectReference:
-                                    prop.objectReferenceValue = property.Value.objectReferenceValue;
+                                    serializedProperty.objectReferenceValue = 
+                                        propertyToChange.Value.objectReferenceValue;
                                     break;
                                 case SerializedPropertyType.LayerMask:
-                                    // TODO figure out what value this is.
                                     break;
                             }
                         }
@@ -135,7 +126,7 @@ namespace UnityLabs.Cinema
         }
 
         /// <summary>
-        /// Compairs the Control Object to the Checked Object and caches the properties that do not match 
+        /// Compares the Control Object to the Checked Object and caches the properties that do not match 
         /// and are not texture objects.
         /// </summary>
         /// <param name="controlObject"></param>
