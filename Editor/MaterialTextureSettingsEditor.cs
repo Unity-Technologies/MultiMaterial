@@ -186,11 +186,15 @@ namespace UnityLabs
                 m_Logs += " SUCCESS! texture loaded\n";
 
                 var nameSplit = Path.GetFileNameWithoutExtension(file).Split('_');
-                int id;
-                if (int.TryParse(nameSplit[0], out id))
+                foreach (var split in nameSplit)
                 {
-                    m_UdimIndexMapping[id] = texture;
-                    m_Logs += string.Format("Texture id: {0} name: {1} found\n", id, texture.name);
+                    int id;
+                    if (int.TryParse(split, out id) && (id > 999 && id < 10000))
+                    {
+                        m_UdimIndexMapping[id] = texture;
+                        m_Logs += string.Format("Texture id: {0} name: {1} found\n", id, texture.name);
+                    break;
+                    }
                 }
             }
 
@@ -201,17 +205,20 @@ namespace UnityLabs
                 if (mat != null)
                 {
                     var nameSplit = mat.name.Split('_');
-                    int id;
-                    if (int.TryParse(nameSplit[nameSplit.Length - 1], out id))
+                    foreach (var split in nameSplit)
                     {
-                        if (!m_UdimMaterial.ContainsKey(id))
+                        int id;
+                        if (int.TryParse(split, out id) && (id > 999 && id < 10000))
                         {
-                            m_UdimMaterial[id] = new List<Material>();
+                            if (!m_UdimMaterial.ContainsKey(id))
+                            {
+                                m_UdimMaterial[id] = new List<Material>();
+                            }
+                            m_UdimMaterial[id].Add(mat);
+                            m_Logs += string.Format("Material id: {0} name: {1} found\n", id, mat.name);
+                            break;
                         }
-                        m_UdimMaterial[id].Add(mat);
-                        m_Logs += string.Format("Material id: {0} name: {1} found\n", id, mat.name);
                     }
-
                 }
             }
 

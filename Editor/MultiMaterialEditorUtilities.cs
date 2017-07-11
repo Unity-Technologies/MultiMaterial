@@ -181,10 +181,10 @@ namespace UnityLabs
                             break;
                         case SerializedPropertyType.ExposedReference:
                             // Note: Does not handle syncing nulls. Cannot tell if the null should have been a texture. 
-                            if (syncAll || controlPoperty.exposedReferenceValue != null && 
-                                controlPoperty.exposedReferenceValue.GetType().IsAssignableFrom(typeof(Texture)))
-                                if (controlPoperty.exposedReferenceValue != property.exposedReferenceValue)
-                                    setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
+                            if ((syncAll || controlPoperty.exposedReferenceValue != null &&
+                                controlPoperty.exposedReferenceValue.GetType().IsAssignableFrom(typeof(Texture))) && 
+                                controlPoperty.exposedReferenceValue != property.exposedReferenceValue)
+                                setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
                             break;
                         case SerializedPropertyType.FixedBufferSize:
                             // SerializedProperty.fixedBufferSize is read only
