@@ -261,8 +261,14 @@ namespace UnityLabs
         /// <param name="materialArray">Material array the shader popup operates on.</param>
         public static void ShaderPopup(Material material, MaterialArray materialArray)
         {
-            var index = Array.FindIndex(shaderNames, s=> s == material.shader.name);
+            var index = Array.FindIndex(shaderNames, s => s == material.shader.name);
             // Have to use our own popup since you cannot use the material editor popup
+            if (index >-1 || index > shaderNames.Length)
+            {
+                UpdateShaderNames(material);
+                EditorGUILayout.Popup(index, shaderNameGUIContents);
+                return;
+            }
             index = EditorGUILayout.Popup(index, shaderNameGUIContents);
             if (shaderNames[index] != material.shader.name)
             {
