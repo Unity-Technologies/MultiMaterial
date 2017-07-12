@@ -203,7 +203,7 @@ namespace UnityLabs
 
         /// <summary>
         /// Checks that the individual Material Editor's material in the 'materialEditors' array matches the material 
-        /// at the corresponding index match the material in the 'materialArray'
+        /// at the corresponding index in the 'materialArray'
         /// </summary>
         /// <param name="materialEditors">Material Editor Array that will be checked against 'materialArray'</param>
         /// <param name="materialArray">Material Array that the 'materialEditors' should match</param>

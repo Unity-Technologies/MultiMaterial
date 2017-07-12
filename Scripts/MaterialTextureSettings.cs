@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UnityLabs
 {
-    [CreateAssetMenu(menuName = "MultiMaterial/MaterialTextureSettings")]
+    [CreateAssetMenu(menuName = "Multi Material/Material Texture Settings")]
     [Serializable]
     public class MaterialTextureSettings : ScriptableObject
     {

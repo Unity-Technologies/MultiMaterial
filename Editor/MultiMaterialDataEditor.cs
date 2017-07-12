@@ -20,7 +20,6 @@ namespace UnityLabs
             MaterialArrayDrawers.UpdateShaderNames();
         }
 
-        
         public override void OnInspectorGUI()
         {
             var targetData = target as MultiMaterialData;
@@ -79,10 +78,7 @@ namespace UnityLabs
             {
                 return true;
             }
-            else
-            {
-                return base.HasPreviewGUI();
-            }
+            return base.HasPreviewGUI();
         }
 
         public override void OnInteractivePreviewGUI(Rect r, GUIStyle background)

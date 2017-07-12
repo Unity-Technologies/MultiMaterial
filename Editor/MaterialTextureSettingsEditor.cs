@@ -13,6 +13,7 @@ namespace UnityLabs
         Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
         bool m_SettingReady;
         string m_Logs;
+        MaterialTextureSettings m_MaterialTextureSettings;
 
         Dictionary<int, Texture> m_UdimIndexMapping;
         Dictionary<int, List<Material>> m_UdimMaterial;
@@ -20,6 +21,7 @@ namespace UnityLabs
         void OnEnable()
         {
             m_SearchSettings = serializedObject.FindProperty(MaterialTextureSettings.searchSettingsPub);
+            m_MaterialTextureSettings = target as MaterialTextureSettings;
         }
 
         public override void OnInspectorGUI()
@@ -29,12 +31,15 @@ namespace UnityLabs
             EditorGUILayout.PropertyField(arraySizeProp);
             serializedObject.ApplyModifiedProperties();
 
+            if (m_MaterialTextureSettings == null)
+                m_MaterialTextureSettings = target as MaterialTextureSettings;
+
             EditorGUI.indentLevel++;
             serializedObject.Update();
-            var materialTextureSettings = target as MaterialTextureSettings;
-            for (var i = 0; i < materialTextureSettings.searchSettings.Length; i++)
+            
+            for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
             {
-                var textureSearch = materialTextureSettings.searchSettings[i];
+                var textureSearch = m_MaterialTextureSettings.searchSettings[i];
                 SearchSettingsDrawer(m_SearchSettings.GetArrayElementAtIndex(i), textureSearch, i);
             }
             EditorGUILayout.Separator();
@@ -42,21 +47,21 @@ namespace UnityLabs
             EditorGUI.indentLevel--;
 
             EditorGUILayout.BeginHorizontal();
-            m_SettingReady = materialTextureSettings != null && materialTextureSettings.searchSettings.Length > 0;
+            m_SettingReady = m_MaterialTextureSettings != null && m_MaterialTextureSettings.searchSettings.Length > 0;
             EditorGUI.BeginDisabledGroup(!m_SettingReady);
             if (GUILayout.Button("Apply All"))
             {
-                for (var i = 0; i < materialTextureSettings.searchSettings.Length; i++)
+                for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
                 {
-                    var textureSearch = materialTextureSettings.searchSettings[i];
+                    var textureSearch = m_MaterialTextureSettings.searchSettings[i];
                     ApplySettingsToSelection(textureSearch);
                 }
             }
             if (GUILayout.Button("Clear All"))
             {
-                for (var i = 0; i < materialTextureSettings.searchSettings.Length; i++)
+                for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
                 {
-                    var textureSearch = materialTextureSettings.searchSettings[i];
+                    var textureSearch = m_MaterialTextureSettings.searchSettings[i];
                     ClearSettingsOnSelection(textureSearch);
                 }
             }
@@ -70,21 +75,18 @@ namespace UnityLabs
             
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndScrollView();
-
         }
 
-
         void SearchSettingsDrawer(SerializedProperty serializedProperty, 
-            MaterialTextureSettings.TextureSearchSettings textureSearch, int index = -1)
+            MaterialTextureSettings.TextureSearchSettings textureSearch, int index)
         {
             serializedObject.Update();
             EditorGUILayout.PropertyField(serializedProperty, 
                 new GUIContent(string.Format("Element {0}: {1}", index, textureSearch.textureName)), true);
             serializedObject.ApplyModifiedProperties();
 
-            var path = string.Format("{0}{1}{2}",
-                Application.dataPath,
-                Path.AltDirectorySeparatorChar, textureSearch.searchDir);
+            var path = string.Format("{0}{1}{2}",Application.dataPath, Path.AltDirectorySeparatorChar, 
+                textureSearch.searchDir);
             var colorTags = "red";
             if (Directory.Exists(path))
             {
@@ -160,9 +162,7 @@ namespace UnityLabs
             }
 
             var files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
-            for (var i = 0; i < files.Length; i++)
-            {
-                var file = files[i];
+            foreach (var file in files) {
                 if (string.IsNullOrEmpty(file))
                     continue;
                 if (Path.GetExtension(file) == ".meta")
@@ -193,7 +193,7 @@ namespace UnityLabs
                     {
                         m_UdimIndexMapping[id] = texture;
                         m_Logs += string.Format("Texture id: {0} name: {1} found\n", id, texture.name);
-                    break;
+                        break;
                     }
                 }
             }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace UnityLabs
 {
-    [CreateAssetMenu(menuName = "MultiMaterial/MultiMaterialData")]
+    [CreateAssetMenu(menuName = "Multi Material/Multi Material Data")]
     [Serializable]
     public class MultiMaterialData : ScriptableObject
     {

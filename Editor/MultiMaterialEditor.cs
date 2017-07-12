@@ -23,35 +23,37 @@ namespace UnityLabs
             m_MaterialEditors = new MaterialEditor[] {};
             m_RendererMaterialArray = new MaterialArray();
             m_MultiMaterial = target as MultiMaterial;
-            if (m_MultiMaterial != null)
-            {
-                ValidateEditorData(m_MultiMaterial.multiMaterialData == null);
-            }
+
+            m_Renderer = m_MultiMaterial.gameObject.GetComponent<Renderer>();
+            m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
+
+            ValidateEditorData(m_MultiMaterial.multiMaterialData == null);
         }
 
         void ValidateEditorData(bool useRenderer)
         {
-            m_MultiMaterial = target as MultiMaterial;
-            m_Renderer = m_MultiMaterial.gameObject.GetComponent<Renderer>();
-            m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
-                
             m_MultiMaterialData = useRenderer? serializedObject : new SerializedObject(m_MultiMaterial.multiMaterialData);
             m_MaterialArray = useRenderer? m_RendererMaterialArray : m_MultiMaterial.materialArray;
-            if (useRenderer)
-            {
-                m_MaterialProperties = null;
-            }
-            else
-            {
-                m_SerializedMaterials = m_MultiMaterialData.FindProperty(string.Format("{0}.{1}", 
-                    MultiMaterialData.materialArrayPub, MaterialArray.materialsPub));
 
-                var materialPropList = new List<SerializedProperty>();
-                for (var i = 0; i < m_SerializedMaterials.arraySize; ++i)
+            if (!MaterialArrayDrawers.CheckMaterialEditors(m_MaterialEditors, m_MaterialArray))
+            {
+                if (useRenderer)
                 {
-                    materialPropList.Add(m_SerializedMaterials.GetArrayElementAtIndex(i));
+                    m_MaterialProperties = null;
                 }
-                m_MaterialProperties = materialPropList.ToArray();
+                else
+                {
+                    m_SerializedMaterials = m_MultiMaterialData.FindProperty(string.Format("{0}.{1}",
+                        MultiMaterialData.materialArrayPub, MaterialArray.materialsPub));
+
+                    var materialPropList = new List<SerializedProperty>();
+                    for (var i = 0; i < m_SerializedMaterials.arraySize; ++i)
+                    {
+                        materialPropList.Add(m_SerializedMaterials.GetArrayElementAtIndex(i));
+                    }
+                    m_MaterialProperties = materialPropList.ToArray();
+                }
+                m_SetDirty = true;
             }
         }
 
@@ -67,7 +69,7 @@ namespace UnityLabs
             if (!useRenderer && m_SerializedMaterials == null)
                 m_SetDirty = true;
 
-            if (m_SetDirty)
+            if (m_SetDirty || useRenderer)
             {
                 ValidateEditorData(useRenderer);
             }
@@ -87,11 +89,11 @@ namespace UnityLabs
                 m_SetDirty = m_SetDirty || EditorGUI.EndChangeCheck();
             }
 
-            if (m_SetDirty)
-                return;
-
             MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, m_MaterialArray, 
                 ref m_MaterialEditors, m_SetDirty, m_MaterialProperties);
+
+            if (m_SetDirty)
+                return;
 
             if (!useRenderer)
             {
