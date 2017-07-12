@@ -239,9 +239,6 @@ namespace UnityLabs
         /// <param name="material">Material used to set up Shader Menu.</param>
         public static void UpdateShaderNames(Material material = null)
         {
-            if (material != null)
-                UnityEditorInternal.InternalEditorUtility.SetupShaderMenu(material);
-
             var guids = AssetDatabase.FindAssets("t:Shader");
             var shaderList = new List<Shader>(guids.Select(s => AssetDatabase.LoadMainAssetAtPath(
                 AssetDatabase.GUIDToAssetPath(s)) as Shader));
@@ -263,7 +260,7 @@ namespace UnityLabs
         {
             var index = Array.FindIndex(shaderNames, s => s == material.shader.name);
             // Have to use our own popup since you cannot use the material editor popup
-            if (index >-1 || index > shaderNames.Length)
+            if (index < 0 || index > shaderNames.Length)
             {
                 UpdateShaderNames(material);
                 EditorGUILayout.Popup(index, shaderNameGUIContents);
