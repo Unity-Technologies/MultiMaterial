@@ -256,7 +256,7 @@ namespace UnityLabs
             shaderNames = shaderList.Select(n => n.name).ToArray();
 
             // Filter out shaders marked as 'Hidden' and auto generated internal sub shaders
-            shaderNames = shaderNames.Where(s => !string.IsNullOrEmpty(s) && !s.Contains("__") && 
+            shaderNames = shaderNames.Where(s => !String.IsNullOrEmpty(s) && !s.Contains("__") && 
             !s.Contains("Hidden")).ToArray();
             shaderNameGUIContents = shaderNames.Select(s => new GUIContent(s)).ToArray();
         }
@@ -288,6 +288,72 @@ namespace UnityLabs
 
                 MultiMaterialEditorUtilities.SetCheckMaterialShaders(materialArray, material);
             }
+        }
+
+        public static bool AddSelectedButtons(SerializedObject serializedObject, MaterialArray materialArray)
+        {
+            EditorGUILayout.BeginVertical();
+            var changed = AddSelectedButton(serializedObject, materialArray, "Add Selected", false, false);
+            EditorGUILayout.BeginHorizontal();
+            changed = AddSelectedButton(serializedObject, materialArray, "Include Children", true, false) || changed;
+            changed = AddSelectedButton(serializedObject, materialArray, "Include Inactive", true, true) || changed;
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
+            return changed;
+        }
+
+        public static bool AddSelectedButton(SerializedObject serializedObject, MaterialArray materialArray, 
+            string text, bool includeChildren, bool includeInactive)
+        {
+            if (GUILayout.Button(text))
+            {
+                serializedObject.Update();
+                var matHash = new HashSet<Material>();
+                if (materialArray.materials.Length > 0)
+                {
+                    foreach (var mat in materialArray.materials)
+                    {
+                        matHash.Add(mat);
+                    }
+                }
+                foreach (var obj in Selection.objects)
+                {
+                    var mat = obj as Material;
+                    if (mat != null)
+                    {
+                        matHash.Add(mat);
+                    }
+                    var go = obj as GameObject;
+                    if (go != null)
+                    {
+                        var meshRenderers = includeChildren? go.GetComponentsInChildren<MeshRenderer>(includeInactive)
+                            : go.GetComponents<MeshRenderer>();
+                        foreach (var meshRenderer in meshRenderers)
+                        {
+                            foreach (var sharedMaterial in meshRenderer.sharedMaterials)
+                            {
+                                matHash.Add(sharedMaterial);
+                            }
+                        }
+                        var skinnedMeshRenderers = includeChildren? 
+                            go.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive) 
+                            : go.GetComponents<SkinnedMeshRenderer>();
+                        foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+                        {
+                            foreach (var sharedMaterial in skinnedMeshRenderer.sharedMaterials)
+                            {
+                                matHash.Add(sharedMaterial);
+                            }
+                        }
+                    }
+                }
+                Undo.RecordObject(serializedObject.targetObject, "add selected");
+                materialArray.materials = matHash.ToArray();
+
+                serializedObject.ApplyModifiedProperties();
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

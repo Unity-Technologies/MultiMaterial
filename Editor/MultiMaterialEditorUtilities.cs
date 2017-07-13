@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.CodeDom;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -250,7 +251,6 @@ namespace UnityLabs
             return setProperties;
         }
 
-
         public static void SetCheckMaterialShaders(MaterialArray materialArray, Material mat)
         {
             var matSerial = new SerializedObject(mat);
@@ -272,6 +272,5 @@ namespace UnityLabs
                 }
             }
         }
-
     }
 }
