@@ -7,6 +7,8 @@ namespace UnityLabs
 {
     public class MultiMaterialEditorUtilities
     {
+        const string k_DefaultMaterial = "Default-Material";
+
         public static void UpdateMaterials(MaterialArray materialArray, 
             Material controlMaterial, bool syncAll = false)
         {
@@ -23,12 +25,14 @@ namespace UnityLabs
                 Material checkedMaterial = null;
                 foreach (var material in materialArray.materials)
                 {
-                    if (material != controlMaterial)
+                    if (material != controlMaterial && material.name != k_DefaultMaterial)
                     {
                         checkedMaterial = material;
                         break;
                     }
                 }
+                if (checkedMaterial == null)
+                    return;
                 checkedMaterialObject = new SerializedObject(checkedMaterial);
             }
 
@@ -38,7 +42,9 @@ namespace UnityLabs
             var matHash = new HashSet<Material>(materialArray.materials);
 
             //Convert each material in the hash into a list of serialized accessors.
-            var matObjs = (from mat in matHash where mat != null select new SerializedObject(mat)).ToList();
+            var matObjs = (from mat in matHash
+                           where mat != null && mat.name != k_DefaultMaterial
+                           select new SerializedObject(mat)).ToList();
 
             if (propertiesToChange != null && propertiesToChange.Count > 0)
             {
@@ -254,7 +260,7 @@ namespace UnityLabs
 
             foreach (var material in materialArray.materials)
             {
-                if (material == null)
+                if (material == null || material.name == k_DefaultMaterial)
                     continue;
                 var targetMatSerial = new SerializedObject(material);
                 var targetShader = targetMatSerial.FindProperty("m_Shader");

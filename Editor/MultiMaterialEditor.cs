@@ -9,140 +9,165 @@ namespace UnityLabs
     public class MultiMaterialEditor : Editor
     {
         MaterialEditor[] m_MaterialEditors;
-        MaterialArray m_MaterialArray;
+        SerializedProperty m_Materials;
+
         Renderer m_Renderer;
         MaterialArray m_RendererMaterialArray;
-        SerializedProperty m_SerializedMaterials;
+
         MultiMaterial m_MultiMaterial;
         SerializedObject m_MultiMaterialData;
         SerializedProperty[] m_MaterialProperties;
-        bool m_SetDirty;
+
+        bool useRenderer
+        {
+            get
+            {
+                return m_MultiMaterial == null || m_MultiMaterial.multiMaterialData == null;
+            }
+        }
+
+        MaterialArray materialArray
+        {
+            get { return m_RendererMaterialArray ?? m_MultiMaterial.multiMaterialData.materialArrayData; }
+        }
 
         public void OnEnable()
         {
             m_MaterialEditors = new MaterialEditor[] {};
-            m_RendererMaterialArray = new MaterialArray();
             m_MultiMaterial = target as MultiMaterial;
-
+            if (m_MultiMaterial.multiMaterialData != null)
+                m_MultiMaterialData = new SerializedObject(m_MultiMaterial.multiMaterialData);
             m_Renderer = m_MultiMaterial.gameObject.GetComponent<Renderer>();
-            m_RendererMaterialArray.materials = m_Renderer.sharedMaterials;
 
-            ValidateEditorData(m_MultiMaterial.multiMaterialData == null);
+            ValidateEditorData();
+            MaterialArrayDrawers.UpdateShaderNames();
         }
 
-        void ValidateEditorData(bool useRenderer)
+        void ValidateEditorData()
         {
-            m_MultiMaterialData = useRenderer? serializedObject : new SerializedObject(m_MultiMaterial.multiMaterialData);
-            m_MaterialArray = useRenderer? m_RendererMaterialArray : m_MultiMaterial.materialArray;
-
-            if (!MaterialArrayDrawers.CheckMaterialEditors(m_MaterialEditors, m_MaterialArray))
+            if (m_MultiMaterial.multiMaterialData != null && m_MultiMaterialData == null)
             {
-                if (useRenderer)
-                {
-                    m_MaterialProperties = null;
-                }
-                else
-                {
-                    m_SerializedMaterials = m_MultiMaterialData.FindProperty(string.Format("{0}.{1}",
-                        MultiMaterialData.materialArrayPub, MaterialArray.materialsPub));
+                m_MultiMaterialData = new SerializedObject(m_MultiMaterial.multiMaterialData);
+            }
 
-                    var materialPropList = new List<SerializedProperty>();
-                    for (var i = 0; i < m_SerializedMaterials.arraySize; ++i)
-                    {
-                        materialPropList.Add(m_SerializedMaterials.GetArrayElementAtIndex(i));
-                    }
-                    m_MaterialProperties = materialPropList.ToArray();
+            if (useRenderer)
+            {
+                if (m_Renderer == null)
+                    m_Renderer = m_MultiMaterial.GetComponent<Renderer>();
+
+                m_RendererMaterialArray = m_Renderer != null ? 
+                    new MaterialArray { materials = m_Renderer.sharedMaterials } : null;
+                m_MaterialProperties = null;
+            }
+            else
+            {
+                m_Renderer = null;
+                m_RendererMaterialArray = null;
+            }
+
+            if (m_Renderer == null)
+            {
+                m_Materials = m_MultiMaterialData.FindProperty(string.Format("{0}.{1}",
+                    MultiMaterialData.materialArrayPub, MaterialArray.materialsPub));
+
+                var materialPropList = new List<SerializedProperty>();
+                for (var i = 0; i < m_Materials.arraySize; ++i)
+                {
+                    materialPropList.Add(m_Materials.GetArrayElementAtIndex(i));
                 }
-                m_SetDirty = true;
+                m_MaterialProperties = materialPropList.ToArray();
             }
         }
 
         public override void OnInspectorGUI()
         {
+            var changed = false;
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
             base.OnInspectorGUI();
             serializedObject.ApplyModifiedProperties();
+            changed = EditorGUI.EndChangeCheck();
 
-            var useRenderer = m_MultiMaterial.multiMaterialData == null;
-
-            if (!useRenderer && m_SerializedMaterials == null)
-                m_SetDirty = true;
-
-            if (m_SetDirty || useRenderer)
-            {
-                ValidateEditorData(useRenderer);
-            }
-
-            m_SetDirty = EditorGUI.EndChangeCheck();
-
-            if (useRenderer)
-            {
-                m_SetDirty = CreateMultiMaterialDataButton(m_SetDirty);
-            }
-            else
-            {
-                EditorGUI.BeginChangeCheck();
-                m_MultiMaterialData.Update();
-                m_SerializedMaterials.arraySize = EditorGUILayout.DelayedIntField("Size", m_SerializedMaterials.arraySize);
-                m_MultiMaterialData.ApplyModifiedProperties();
-                m_SetDirty = m_SetDirty || EditorGUI.EndChangeCheck();
-            }
-
-            MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, m_MaterialArray, 
-                ref m_MaterialEditors, m_SetDirty, m_MaterialProperties);
-
-            if (m_SetDirty)
-                return;
+            ValidateEditorData();
 
             if (!useRenderer)
             {
-                if (GUILayout.Button("Add Selected"))
+                m_MultiMaterialData.Update();
+                EditorGUI.BeginChangeCheck();
+                m_Materials.arraySize = EditorGUILayout.DelayedIntField("Size",
+                    m_Materials.arraySize);
+                m_MultiMaterialData.ApplyModifiedProperties();
+                if (EditorGUI.EndChangeCheck())
                 {
-                    m_MultiMaterialData.Update();
-                    var matHash = new HashSet<Material>();
-                    if (m_MaterialArray.materials.Length > 0)
-                    {
-                        foreach (var mat in m_MaterialArray.materials)
-                        {
-                            matHash.Add(mat);
-                        }
-                    }
-                    foreach (var obj in Selection.objects)
-                    {
-                        var mat = obj as Material;
-                        if (mat != null)
-                        {
-                            matHash.Add(mat);
-                        }
-                    }
-                    m_MultiMaterial.materialArray.materials = matHash.ToArray();
-
-                    m_MultiMaterialData.ApplyModifiedProperties();
-
-                    m_SetDirty = true;
-                    return;
+                    if (m_MultiMaterial.multiMaterialData != null)
+                        m_MultiMaterialData = new SerializedObject(m_MultiMaterial.multiMaterialData);
+                    ValidateEditorData();
+                    changed = true;
                 }
             }
-            
-            if (GUILayout.Button("Select Materials"))
+            else if (m_Renderer != null)
             {
-                if (m_MaterialArray != null && m_MaterialArray.materials != null &&
-                    m_MaterialArray.materials.Length > 0)
+                if (CreateMultiMaterialDataButton(false))
                 {
-                    Selection.objects = m_MaterialArray.materials;
+                    if (m_MultiMaterial.multiMaterialData != null)
+                        m_MultiMaterialData = new SerializedObject(m_MultiMaterial.multiMaterialData);
+                    ValidateEditorData();
                 }
             }
 
-            m_SetDirty = false;
+            if (!useRenderer || m_Renderer != null)
+            {
+                MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, materialArray,
+                    ref m_MaterialEditors, changed, m_MaterialProperties);
+
+                if (m_Renderer == null)
+                {
+                    if (GUILayout.Button("Add Selected"))
+                    {
+                        m_MultiMaterialData.Update();
+                        var matHash = new HashSet<Material>();
+                        if (materialArray.materials.Length > 0)
+                        {
+                            foreach (var mat in materialArray.materials)
+                            {
+                                matHash.Add(mat);
+                            }
+                        }
+                        foreach (var obj in Selection.objects)
+                        {
+                            var mat = obj as Material;
+                            if (mat != null)
+                            {
+                                matHash.Add(mat);
+                            }
+                        }
+                        materialArray.materials = matHash.ToArray();
+
+                        m_MultiMaterialData.ApplyModifiedProperties();
+                        MaterialArrayDrawers.RebuildMaterialEditors(ref m_MaterialEditors, materialArray);
+                        return;
+                    }
+                }
+
+                if (GUILayout.Button("Select Materials"))
+                {
+                    if (materialArray != null && materialArray.materials != null &&
+                        materialArray.materials.Length > 0)
+                    {
+                        Selection.objects = materialArray.materials;
+                    }
+                }
+            }
         }
 
         bool CreateMultiMaterialDataButton(bool changed)
         {
+            EditorGUI.BeginDisabledGroup(m_Renderer == null);
             if (GUILayout.Button("Create From Renderer"))
             {
                 var saveMultiMaterialData = CreateInstance<MultiMaterialData>();
-                saveMultiMaterialData.materialArrayData = m_RendererMaterialArray;
+                var rendererMaterialArray = new MaterialArray {materials = m_Renderer.sharedMaterials};
+                saveMultiMaterialData.materialArrayData = rendererMaterialArray;
 
                 var path = EditorUtility.SaveFilePanelInProject("Multi Material Data Save Window",
                     m_Renderer.gameObject.name + " Multi Material Data", "asset",
@@ -162,10 +187,11 @@ namespace UnityLabs
                     dataProp.objectReferenceValue = loadMultiMaterialData;
                     serializedObject.ApplyModifiedProperties();
                 }
+                ValidateEditorData();
                 return true;
             }
+            EditorGUI.EndDisabledGroup();
             return changed;
         }
-        
     }
 }

@@ -28,6 +28,7 @@ namespace UnityLabs
             serializedObject.Update();
             var materialPropList = new List<SerializedProperty>();
             m_Materials.arraySize = EditorGUILayout.DelayedIntField("Size", m_Materials.arraySize);
+            serializedObject.ApplyModifiedProperties();
             for (var i = 0; i < m_Materials.arraySize; ++i)
             {
                 materialPropList.Add(m_Materials.GetArrayElementAtIndex(i));
@@ -36,7 +37,7 @@ namespace UnityLabs
             serializedObject.ApplyModifiedProperties();
             var changed = EditorGUI.EndChangeCheck();
 
-            MaterialArrayDrawers.OnInspectorGUI(serializedObject, 
+            MaterialArrayDrawers.OnInspectorGUI(serializedObject,
                 targetData.materialArrayData, ref m_MaterialEditors, changed, materialProperties);
 
             var targetArray = targetData.materialArrayData;
@@ -45,7 +46,8 @@ namespace UnityLabs
             {
                 serializedObject.Update();
                 var matHash = new HashSet<Material>();
-                if (targetArray.materials.Length > 0)
+                // Use serialized property array size since targetArray could be null when object if first created.
+                if (m_Materials.arraySize > 0)
                 {
                     foreach (var mat in targetArray.materials)
                     {
@@ -59,6 +61,15 @@ namespace UnityLabs
                     {
                         matHash.Add(mat);
                     }
+                }
+
+                // When first created the material array will be null.
+                // Changing the size will create the material array.
+                if (m_Materials.arraySize < 1)
+                {
+                    m_Materials.arraySize = matHash.Count;
+                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
+                    targetArray = targetData.materialArrayData;
                 }
                 targetArray.materials = matHash.ToArray();
 

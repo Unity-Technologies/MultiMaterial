@@ -18,6 +18,7 @@ namespace UnityLabs
 
         const string k_NullMaterialWarning = "<b><color=#ffffffff>Material is Null</color></b>";
         const int k_IconSize = 32;
+        const string k_DefaultMaterial = "Default-Material";
 
         /// <summary>
         /// Draw the Multi Material Inspector GUI using Material Editors for each material in Material Array 
@@ -45,26 +46,29 @@ namespace UnityLabs
                 {
                     if (materialArray.materials[i] != null && materialEditors[i] != null)
                     {
+                        var material = materialEditors[i].target as Material;
+                        
                         OnMiniMaterialArrayHeaderGUI(serializedObject, ref materialEditors[i], materialArray, 
-                            materialProperties != null? materialProperties[i] : null);
+                            materialProperties != null && materialProperties.Length > i && 
+                            materialProperties[i] != null? materialProperties[i] : null);
 
+                        EditorGUI.BeginDisabledGroup(material != null && material.name == k_DefaultMaterial);
                         // Draw the Material Editor Body
                         if (materialEditors[i].isVisible)
                         {
                             EditorGUI.BeginChangeCheck();
                             if (GUILayout.Button("Sync to Material"))
                             {
-                                MultiMaterialEditorUtilities.UpdateMaterials(materialArray, 
-                                    materialEditors[i].target as Material, true);
+                                MultiMaterialEditorUtilities.UpdateMaterials(materialArray, material, true);
                             }
                             materialEditors[i].OnInspectorGUI();
 
                             if (EditorGUI.EndChangeCheck())
                             {
-                                MultiMaterialEditorUtilities.UpdateMaterials(materialArray, 
-                                    materialEditors[i].target as Material);
+                                MultiMaterialEditorUtilities.UpdateMaterials(materialArray, material);
                             }
                         }
+                        EditorGUI.EndDisabledGroup();
                     }
                     else
                     {
@@ -137,7 +141,10 @@ namespace UnityLabs
                 EditorGUILayout.PropertyField(serializedMaterial, GUIContent.none);
                 serializedMaterial.serializedObject.ApplyModifiedProperties();
             }
+
+            EditorGUI.BeginDisabledGroup(material != null && material.name == k_DefaultMaterial);
             ShaderPopup(material, materialArray);
+            EditorGUI.EndDisabledGroup();
 
             EditorGUILayout.EndVertical();  // End Title and Shader Area
             EditorGUILayout.EndHorizontal(); // End Header Area
@@ -154,13 +161,16 @@ namespace UnityLabs
             // If check fails try to rebuild editors then recheck
             if (!CheckMaterialEditors(materialEditors, materialArray))
             {
-                for (var i = 0; i < materialEditors.Length; i++)
+                if (materialEditors != null)
                 {
-                    if (materialEditors[i] == null)
-                        continue;
+                    for (var i = 0; i < materialEditors.Length; i++)
+                    {
+                        if (materialEditors[i] == null)
+                            continue;
 
-                    UnityObject.DestroyImmediate(materialEditors[i]);
-                    materialEditors[i] = null;
+                        UnityObject.DestroyImmediate(materialEditors[i]);
+                        materialEditors[i] = null;
+                    }
                 }
 
                 var rebuildShaders = true;

@@ -36,19 +36,19 @@ namespace UnityLabs
 
             EditorGUI.indentLevel++;
             serializedObject.Update();
-            
-            for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
+
+            for (var i = 0; i < m_SearchSettings.arraySize; i++)
             {
                 var textureSearch = m_MaterialTextureSettings.searchSettings[i];
                 SearchSettingsDrawer(m_SearchSettings.GetArrayElementAtIndex(i), textureSearch, i);
             }
+
             EditorGUILayout.Separator();
             serializedObject.ApplyModifiedProperties();
             EditorGUI.indentLevel--;
 
             EditorGUILayout.BeginHorizontal();
-            m_SettingReady = m_MaterialTextureSettings != null && m_MaterialTextureSettings.searchSettings.Length > 0;
-            EditorGUI.BeginDisabledGroup(!m_SettingReady);
+            EditorGUI.BeginDisabledGroup(m_SearchSettings.arraySize < 1);
             if (GUILayout.Button("Apply All"))
             {
                 for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
@@ -127,7 +127,6 @@ namespace UnityLabs
             }
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();
-
         }
 
         void ClearSettingsOnSelection(MaterialTextureSettings.TextureSearchSettings textureSearch)
