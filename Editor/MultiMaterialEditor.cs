@@ -120,59 +120,10 @@ namespace UnityLabs
                 MaterialArrayDrawers.OnInspectorGUI(m_MultiMaterialData, materialArray,
                     ref m_MaterialEditors, changed, m_MaterialProperties);
 
-                if (m_Renderer == null)
+                if (m_Renderer == null && MaterialArrayDrawers.AddSelectedButtons(m_MultiMaterialData, materialArray))
                 {
-//                    if (GUILayout.Button("Add Selected"))
-//                    {
-//                        m_MultiMaterialData.Update();
-//                        var matHash = new HashSet<Material>();
-//                        if (materialArray.materials.Length > 0)
-//                        {
-//                            foreach (var mat in materialArray.materials)
-//                            {
-//                                matHash.Add(mat);
-//                            }
-//                        }
-//                        foreach (var obj in Selection.objects)
-//                        {
-//                            var mat = obj as Material;
-//                            if (mat != null)
-//                            {
-//                                matHash.Add(mat);
-//                            }
-//                            var go = obj as GameObject;
-//                            if (go != null)
-//                            {
-//                                var meshRenderers = go.GetComponentsInChildren<MeshRenderer>(true);
-//                                foreach (var meshRenderer in meshRenderers)
-//                                {
-//                                    foreach (var sharedMaterial in meshRenderer.sharedMaterials)
-//                                    {
-//                                        matHash.Add(sharedMaterial);
-//                                    }
-//                                }
-//                                var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-//                                foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
-//                                {
-//                                    foreach (var sharedMaterial in skinnedMeshRenderer.sharedMaterials)
-//                                    {
-//                                        matHash.Add(sharedMaterial);
-//                                    }
-//                                }
-//                            }
-//                        }
-//                        materialArray.materials = matHash.ToArray();
-//
-//                        m_MultiMaterialData.ApplyModifiedProperties();
-//                        MaterialArrayDrawers.RebuildMaterialEditors(ref m_MaterialEditors, materialArray);
-//                        return;
-//                    }
-
-                    if (MaterialArrayDrawers.AddSelectedButtons(m_MultiMaterialData, materialArray))
-                    {
-                        MaterialArrayDrawers.RebuildMaterialEditors(ref m_MaterialEditors, materialArray);
-                        return;
-                    }
+                    MaterialArrayDrawers.RebuildMaterialEditors(ref m_MaterialEditors, materialArray);
+                    return;
                 }
 
                 if (GUILayout.Button("Select Materials"))

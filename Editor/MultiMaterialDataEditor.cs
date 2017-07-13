@@ -43,60 +43,6 @@ namespace UnityLabs
             var targetArray = targetData.materialArrayData;
             if (MaterialArrayDrawers.AddSelectedButtons(serializedObject, targetArray)) { }
 
-//            if (GUILayout.Button("Add Selected"))
-//            {
-//                serializedObject.Update();
-//                var matHash = new HashSet<Material>();
-//                // Use serialized property array size since targetArray could be null when object if first created.
-//                if (m_Materials.arraySize > 0)
-//                {
-//                    foreach (var mat in targetArray.materials)
-//                    {
-//                        matHash.Add(mat);
-//                    }
-//                }
-//                foreach (var obj in Selection.objects)
-//                {
-//                    var mat = obj as Material;
-//                    if (mat != null)
-//                    {
-//                        matHash.Add(mat);
-//                    }
-//                    var go = obj as GameObject;
-//                    if (go != null)
-//                    {
-//                        var meshRenderers = go.GetComponentsInChildren<MeshRenderer>(true);
-//                        foreach (var meshRenderer in meshRenderers)
-//                        {
-//                            foreach (var sharedMaterial in meshRenderer.sharedMaterials)
-//                            {
-//                                matHash.Add(sharedMaterial);
-//                            }
-//                        }
-//                        var skinnedMeshRenderers = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-//                        foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
-//                        {
-//                            foreach (var sharedMaterial in skinnedMeshRenderer.sharedMaterials)
-//                            {
-//                                matHash.Add(sharedMaterial);
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                // When first created the material array will be null.
-//                // Changing the size will create the material array.
-//                if (m_Materials.arraySize < 1)
-//                {
-//                    m_Materials.arraySize = matHash.Count;
-//                    serializedObject.ApplyModifiedPropertiesWithoutUndo();
-//                    targetArray = targetData.materialArrayData;
-//                }
-//                targetArray.materials = matHash.ToArray();
-//
-//                serializedObject.ApplyModifiedProperties();
-//            }
-
             if (GUILayout.Button("Select Materials"))
             {
                 if (targetArray != null && targetArray.materials != null && targetArray.materials.Length > 0)
