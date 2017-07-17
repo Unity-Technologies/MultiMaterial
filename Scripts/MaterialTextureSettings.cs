@@ -1,9 +1,9 @@
 ﻿using System;
 using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
-    [CreateAssetMenu(menuName = "UnityLabs/Cinema/MaterialTextureSettings")]
+    [CreateAssetMenu(menuName = "Multi Material/Material Texture Settings")]
     [Serializable]
     public class MaterialTextureSettings : ScriptableObject
     {
@@ -17,11 +17,13 @@ namespace UnityLabs.Cinema
         [SerializeField]
         TextureSearchSettings[] m_SearchSettings;
 
+#if UNITY_EDITOR
+        public const string searchSettingsPub = "m_SearchSettings";
+#endif
         public TextureSearchSettings[] searchSettings
         {
             get { return m_SearchSettings; }
             set { m_SearchSettings = value; }
         }
     }
-
 }

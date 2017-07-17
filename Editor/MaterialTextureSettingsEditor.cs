@@ -1,60 +1,54 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
-namespace UnityLabs.Cinema
+namespace UnityLabs
 {
-    public class MaterialTextureToolWindow : EditorWindow
+    [CustomEditor(typeof(MaterialTextureSettings))]
+    public class MaterialTextureSettingsEditor : Editor
     {
-        MaterialTextureSettings m_MaterialTextureSettings;
-
-
-        [MenuItem("UnityLabs/Cinema/MaterialTextureToolWindow")]
-        public static void Open()
-        {
-            var window = GetWindow(typeof(MaterialTextureToolWindow));
-            const string windowTitle = "MaterialTextureToolWindow";
-            window.titleContent = new GUIContent(windowTitle);
-            window.Show();
-        }
-
+        SerializedProperty m_SearchSettings;
         Vector2 m_LogsScrollView;
         Color m_DarkWindow = new Color(0, 0, 0, 0.2f);
-        Vector2 m_ScrollView;
         bool m_SettingReady;
+        string m_Logs;
+        MaterialTextureSettings m_MaterialTextureSettings;
 
-        Dictionary<int, Texture> udimMapping;// = new Dictionary<int, Texture>();
-        Dictionary<int, List<Material>> udimMaterial;// = new Dictionary<int, Material>();
+        Dictionary<int, Texture> m_UdimIndexMapping;
+        Dictionary<int, List<Material>> m_UdimMaterial;
 
-        void OnGUI()
+        void OnEnable()
         {
-            EditorGUILayout.Space();
-            m_ScrollView = EditorGUILayout.BeginScrollView(m_ScrollView);
+            m_SearchSettings = serializedObject.FindProperty(MaterialTextureSettings.searchSettingsPub);
+            m_MaterialTextureSettings = target as MaterialTextureSettings;
+        }
 
-            m_MaterialTextureSettings = EditorGUILayout.ObjectField("Search Settings: ",
-                m_MaterialTextureSettings, typeof(MaterialTextureSettings), false) as MaterialTextureSettings;
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+            var arraySizeProp = m_SearchSettings.FindPropertyRelative("Array.size");
+            EditorGUILayout.PropertyField(arraySizeProp);
+            serializedObject.ApplyModifiedProperties();
+
+            if (m_MaterialTextureSettings == null)
+                m_MaterialTextureSettings = target as MaterialTextureSettings;
+
+            EditorGUI.indentLevel++;
+            serializedObject.Update();
+
+            for (var i = 0; i < m_SearchSettings.arraySize; i++)
+            {
+                var textureSearch = m_MaterialTextureSettings.searchSettings[i];
+                SearchSettingsDrawer(m_SearchSettings.GetArrayElementAtIndex(i), textureSearch, i);
+            }
 
             EditorGUILayout.Separator();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            if (m_MaterialTextureSettings != null && m_MaterialTextureSettings.searchSettings.Length > 0)
-            {
-
-                var serializedObject = new SerializedObject(m_MaterialTextureSettings);
-                var serailizedProp = serializedObject.FindProperty("m_SearchSettings");
-                for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
-                {
-                    var textureSearch = m_MaterialTextureSettings.searchSettings[i];
-                    SearchSettingsDrawer(serializedObject, serailizedProp.GetArrayElementAtIndex(i), textureSearch, i);
-                }
-                EditorGUILayout.Separator();
-            }
-            EditorGUILayout.Space();
-            EditorGUILayout.EndScrollView();
+            serializedObject.ApplyModifiedProperties();
+            EditorGUI.indentLevel--;
 
             EditorGUILayout.BeginHorizontal();
-            m_SettingReady = m_MaterialTextureSettings != null && m_MaterialTextureSettings.searchSettings.Length > 0;
-            EditorGUI.BeginDisabledGroup(!m_SettingReady);
+            EditorGUI.BeginDisabledGroup(m_SearchSettings.arraySize < 1);
             if (GUILayout.Button("Apply All"))
             {
                 for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
@@ -63,7 +57,7 @@ namespace UnityLabs.Cinema
                     ApplySettingsToSelection(textureSearch);
                 }
             }
-            if (GUILayout.Button("Cleaar All"))
+            if (GUILayout.Button("Clear All"))
             {
                 for (var i = 0; i < m_MaterialTextureSettings.searchSettings.Length; i++)
                 {
@@ -81,29 +75,27 @@ namespace UnityLabs.Cinema
             
             EditorGUILayout.EndVertical();
             EditorGUILayout.EndScrollView();
-
         }
 
-        string m_Logs;
-        void SearchSettingsDrawer(SerializedObject serializedObject, SerializedProperty serializedProperty, MaterialTextureSettings.TextureSearchSettings textureSearch, int index = -1)
+        void SearchSettingsDrawer(SerializedProperty serializedProperty, 
+            MaterialTextureSettings.TextureSearchSettings textureSearch, int index)
         {
             serializedObject.Update();
-            EditorGUILayout.PropertyField(serializedProperty, new GUIContent(string.Format("Element {0}: {1}", index, textureSearch.textureName)), true);
+            EditorGUILayout.PropertyField(serializedProperty, 
+                new GUIContent(string.Format("Element {0}: {1}", index, textureSearch.textureName)), true);
             serializedObject.ApplyModifiedProperties();
 
-            var path = string.Format("{0}{1}{2}",
-                Application.dataPath,
-                Path.AltDirectorySeparatorChar, textureSearch.searchDir);
+            var path = string.Format("{0}{1}{2}",Application.dataPath, Path.AltDirectorySeparatorChar, 
+                textureSearch.searchDir);
             var colorTags = "red";
             if (Directory.Exists(path))
             {
                 colorTags = "green";
             }
 
-            var ritchPath = string.Format("<size=12><color={0}>{1}</color></size>", colorTags, path);
-            var style = new GUIStyle(EditorStyles.helpBox);
-            style.richText = true;
-            EditorGUILayout.TextArea(ritchPath, style);
+            var richTextPath = string.Format("<size=12><color={0}>{1}</color></size>", colorTags, path);
+            var style = new GUIStyle(EditorStyles.helpBox) { richText = true };
+            EditorGUILayout.TextArea(richTextPath, style);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.Space();
@@ -118,7 +110,8 @@ namespace UnityLabs.Cinema
                     {
                         hasProp = selectionMaterial.HasProperty(textureSearch.textureName);
                     }
-                    m_Logs += string.Format("{0} check if has propery {1} : {2}\n", Selection.objects[0].name, textureSearch.textureName, hasProp);
+                    m_Logs += string.Format("{0} check if has property {1} : {2}\n", 
+                        Selection.objects[0].name, textureSearch.textureName, hasProp);
                 }
 
             }
@@ -134,7 +127,6 @@ namespace UnityLabs.Cinema
             }
             EditorGUILayout.Space();
             EditorGUILayout.EndHorizontal();
-
         }
 
         void ClearSettingsOnSelection(MaterialTextureSettings.TextureSearchSettings textureSearch)
@@ -157,8 +149,8 @@ namespace UnityLabs.Cinema
         void ApplySettingsToSelection(MaterialTextureSettings.TextureSearchSettings textureSearch)
         {
             m_Logs = "";
-            udimMapping = new Dictionary<int, Texture>();
-            udimMaterial = new Dictionary<int, List<Material>>();
+            m_UdimIndexMapping = new Dictionary<int, Texture>();
+            m_UdimMaterial = new Dictionary<int, List<Material>>();
             var path = string.Format("{0}{1}{2}",
                 Application.dataPath,
                 Path.AltDirectorySeparatorChar, textureSearch.searchDir);
@@ -169,9 +161,9 @@ namespace UnityLabs.Cinema
             }
 
             var files = Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly);
-            for (var i = 0; i < files.Length; i++)
-            {
-                var file = files[i];
+            foreach (var file in files) {
+                if (string.IsNullOrEmpty(file))
+                    continue;
                 if (Path.GetExtension(file) == ".meta")
                 {
                     continue;
@@ -193,11 +185,15 @@ namespace UnityLabs.Cinema
                 m_Logs += " SUCCESS! texture loaded\n";
 
                 var nameSplit = Path.GetFileNameWithoutExtension(file).Split('_');
-                int id;
-                if (int.TryParse(nameSplit[0], out id))
+                foreach (var split in nameSplit)
                 {
-                    udimMapping[id] = texture;
-                    m_Logs += string.Format("Texture id: {0} name: {1} found\n", id, texture.name);
+                    int id;
+                    if (int.TryParse(split, out id) && (id > 999 && id < 10000))
+                    {
+                        m_UdimIndexMapping[id] = texture;
+                        m_Logs += string.Format("Texture id: {0} name: {1} found\n", id, texture.name);
+                        break;
+                    }
                 }
             }
 
@@ -208,29 +204,33 @@ namespace UnityLabs.Cinema
                 if (mat != null)
                 {
                     var nameSplit = mat.name.Split('_');
-                    int id;
-                    if (int.TryParse(nameSplit[nameSplit.Length - 1], out id))
+                    foreach (var split in nameSplit)
                     {
-                        if (!udimMaterial.ContainsKey(id))
+                        int id;
+                        if (int.TryParse(split, out id) && (id > 999 && id < 10000))
                         {
-                            udimMaterial[id] = new List<Material>();
+                            if (!m_UdimMaterial.ContainsKey(id))
+                            {
+                                m_UdimMaterial[id] = new List<Material>();
+                            }
+                            m_UdimMaterial[id].Add(mat);
+                            m_Logs += string.Format("Material id: {0} name: {1} found\n", id, mat.name);
+                            break;
                         }
-                        udimMaterial[id].Add(mat);
-                        m_Logs += string.Format("Material id: {0} name: {1} found\n", id, mat.name);
                     }
-
                 }
             }
 
-            foreach (var kp in udimMaterial)
+            foreach (var kp in m_UdimMaterial)
             {
-                if (udimMapping.ContainsKey(kp.Key))
+                if (m_UdimIndexMapping.ContainsKey(kp.Key))
                 {
                     foreach (var mat in kp.Value)
                     {
-                        mat.SetTexture(textureSearch.textureName, udimMapping[kp.Key]);
-                        var texName = udimMapping[kp.Key].name;
-                        m_Logs += string.Format("{0} had texture {1} at {2}", mat.name, texName, textureSearch.textureName);
+                        mat.SetTexture(textureSearch.textureName, m_UdimIndexMapping[kp.Key]);
+                        var texName = m_UdimIndexMapping[kp.Key].name;
+                        m_Logs += string.Format("{0} had texture {1} at {2}", 
+                            mat.name, texName, textureSearch.textureName);
                     }
                 }
                 else
@@ -244,7 +244,6 @@ namespace UnityLabs.Cinema
 
             }
         }
+
     }
-
 }
-

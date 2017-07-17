@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c67590976b3563438673a522f9c62c7, type: 3}
+  m_Name: UDIM_Cube Multi Material Data
+  m_EditorClassIdentifier: 
+  m_MaterialArrayData:
+    m_Materials:
+    - {fileID: 2100000, guid: 0170526d7b0e8b149a69ed418681ad6f, type: 2}
+    - {fileID: 2100000, guid: 912489c98bc30a245ab14158e3230d5e, type: 2}
+    - {fileID: 2100000, guid: 8843c9d14e332cc46a2c76d4a07d3144, type: 2}
+    - {fileID: 2100000, guid: ec70039a5227b1a4494a658d0b64cb88, type: 2}
+    - {fileID: 2100000, guid: 2ba131a2ea50fb644a4e12e9bb487bab, type: 2}
+    - {fileID: 2100000, guid: 1b34c6884e91d104d8774323b761d463, type: 2}
