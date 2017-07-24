@@ -81,6 +81,7 @@ namespace UnityLabs
                                 case SerializedPropertyType.Enum:
                                     serializedProperty.enumValueIndex = propertyToChange.Value.enumValueIndex;
                                     break;
+#if UNITY_2017_1_OR_NEWER
                                 case SerializedPropertyType.ExposedReference:
                                     serializedProperty.exposedReferenceValue = 
                                         propertyToChange.Value.exposedReferenceValue;
@@ -88,6 +89,7 @@ namespace UnityLabs
                                 case SerializedPropertyType.FixedBufferSize:
                                     // SerializedProperty.fixedBufferSize is read only
                                     break;
+#endif
                                 case SerializedPropertyType.Generic:
                                     break;
                                 case SerializedPropertyType.Gradient:
@@ -185,6 +187,7 @@ namespace UnityLabs
                             if (syncAll || controlPoperty.enumValueIndex != property.enumValueIndex)
                                 setProperties[controlPoperty.propertyPath] = controlPoperty.Copy();
                             break;
+#if UNITY_2017_1_OR_NEWER
                         case SerializedPropertyType.ExposedReference:
                             // Note: Does not handle syncing nulls. Cannot tell if the null should have been a texture. 
                             if ((syncAll || controlPoperty.exposedReferenceValue != null &&
@@ -195,6 +198,7 @@ namespace UnityLabs
                         case SerializedPropertyType.FixedBufferSize:
                             // SerializedProperty.fixedBufferSize is read only
                             break;
+#endif
                         case SerializedPropertyType.Generic:
                             // TODO figure out what value this is.
                             break;
