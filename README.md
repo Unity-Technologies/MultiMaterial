@@ -1,5 +1,8 @@
 # MultiMaterial
-<h1>ReadMe</h1>
+<p>Check out the blog post for background and more details:</p>
+
+[Multi-material: Using custom Inspectors and Scriptable Objects for UDIM materials](https://blogs.unity3d.com/2017/08/01/multi-material-using-custom-inspectors-and-scriptable-objects-for-udim-materials "Multi-material: Using custom Inspectors and Scriptable Objects for UDIM materials")
+
 <p>To install, simply create a project in Unity. Then add this repo in the assets folder of your project. There are 2 new scriptable object types that can be accessed by right clicking in the project view in the Create menu.</p> 
 <p>Material Texture Settings is under Create > Multi Material > Material Texture Settings and can be used to assign textures to UDIM materials. The custom inspector is able to apply the texture setting to selected materials and assumes the material and texture are named according to UDIM conventions. Texture Name is the material property name of the texture field and Search Dir is the directory that contains the textures for that material property. Multi Material Data is under Create > Multi Material > Multi Material Data and holds an array of Materials for use in Multi Material Component or you can directly modify the materials from the scriptable object’s inspector.</p>
 <p>The Multi-material Component can be added to a game object to control the Shared Materials array in the object’s renderer. If a Multi Material Data is created from the render, or assigned from the project, that data can be modified here. This can be useful if you have multiple objects that share a group of materials that need to be modified at once. <p>
